@@ -1,38 +1,24 @@
-.App {
-  text-align: center;
+/* src/App.css */
+
+/* Tailwind의 preflight(기본 리셋)을 보완하거나, 전역 스타일 예외가 있을 때 사용 */
+
+/* 전체 배경이나 기본 폰트 지정 정도만 */
+body {
+  @apply bg-white text-gray-900;
+  font-family: 'Inter', sans-serif;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* 링크 스타일 초기화 */
+a {
+  @apply text-blue-600 hover:underline;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+/* 버튼 기본 스타일 제거 (버튼은 대부분 커스텀 컴포넌트로 대체되겠지만 혹시 몰라) */
+button {
+  @apply focus:outline-none;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* input, textarea 기본 스타일 초기화 */
+input, textarea {
+  @apply outline-none;
 }
