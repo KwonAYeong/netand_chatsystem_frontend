@@ -1,11 +1,12 @@
-import React from 'react';
 import clsx from 'clsx';
 
 interface UserAvatarProps {
   src: string;
   alt?: string;
   size?: 'sm' | 'md' | 'lg';
-  status?: 'online' | 'away' | 'offline';
+  isActive?: boolean;
+  className?: string; 
+  showIsActive?: boolean;
 }
 
 const sizeMap = {
@@ -14,34 +15,32 @@ const sizeMap = {
   lg: 'w-12 h-12',
 };
 
-const statusColorMap = {
-  online: 'bg-green-500',
-  away: 'bg-yellow-400',
-  offline: 'bg-gray-400',
-};
-
 const UserAvatar = ({
   src,
   alt = 'User Avatar',
   size = 'md',
-  status = 'online',
+  isActive = false,
+  className,
+  showIsActive,
 }: UserAvatarProps) => {
+  const isActiveColor = isActive ? 'bg-green-500' : 'bg-gray-400';
+
   return (
-    <div className={clsx('relative', sizeMap[size])}>
+    <div className={clsx('relative', sizeMap[size], className)}>
       <img
         src={src || '/default-avatar.png'}
         alt={alt}
         onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = '/default_profile.jpg';
+          (e.currentTarget as HTMLImageElement).src = '/default_profile.jpg';
         }}
-        className="rounded-full object-cover w-full h-full border border-gray-200"
-        />
+        className="rounded-md object-cover w-full h-full border border-gray-200"
+      />
 
-      {status && (
+      {showIsActive !== false && (
         <span
           className={clsx(
             'absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-white',
-            statusColorMap[status]
+            isActiveColor
           )}
         />
       )}

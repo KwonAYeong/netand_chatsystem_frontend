@@ -1,20 +1,19 @@
 // src/context/UserContext.tsx
 import { createContext, useContext, useState } from 'react';
 
-type UserStatus = 'online' | 'away';
+type UserisActive = boolean;
 
 interface User {
   id: string;
-  nickname: string;
   email: string;
   profileImageUrl?: string;
-  status: UserStatus;
+  isActive: UserisActive;
 }
 
 interface UserContextValue {
   user: User | null;
   setUser: (user: User | null) => void;
-  updateStatus: (status: UserStatus) => void;
+  updateisActive: (isActive: UserisActive) => void;
 }
 
 const UserContext = createContext<UserContextValue | undefined>(undefined);
@@ -22,12 +21,12 @@ const UserContext = createContext<UserContextValue | undefined>(undefined);
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  const updateStatus = (status: UserStatus) => {
-    if (user) setUser({ ...user, status });
+  const updateisActive = (isActive: UserisActive) => {
+    if (user) setUser({ ...user, isActive });
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, updateStatus }}>
+    <UserContext.Provider value={{ user, setUser, updateisActive }}>
       {children}
     </UserContext.Provider>
   );

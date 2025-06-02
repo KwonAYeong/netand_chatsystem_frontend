@@ -1,6 +1,6 @@
 // components/profile/ProfileEditModal.tsx
 import { useChatUI } from '../../hooks/useChatUI';
-import ProfileForm from './ProfileForm';
+import ProfileEditForm from './ProfileEditForm';
 import { X } from 'lucide-react';
 
 const ProfileEditModal = () => {
@@ -8,12 +8,11 @@ const ProfileEditModal = () => {
 
   const user = {
     name: '신재윤',
-    nickname: 'jeyoon',
     email: 'jeyoon@example.com',
     company: '카카오',
-    position: '대리',
-    profileImage: '/avatars/user2.png',
-    status: 'online' as const,
+    rank: '대리',
+    profileImage: '',
+    isActive: true,
   };
 
   return (
@@ -28,7 +27,7 @@ const ProfileEditModal = () => {
         </button>
 
         <h2 className="text-lg font-bold mb-4">프로필 편집</h2>
-        <ProfileForm user={user} onCancel={() => setShowProfileModal(false)} />
+        <ProfileEditForm user={user} onCancel={() => setShowProfileModal(false)} />
       </div>
     </div>
   );

@@ -1,4 +1,3 @@
-// ProfileHeader.tsx
 import { X } from 'lucide-react';
 
 interface ProfileHeaderProps {
