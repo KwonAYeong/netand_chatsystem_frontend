@@ -24,7 +24,7 @@ const ProfileCard = ({ user, onisActiveChange }: ProfileCardProps) => {
         <UserAvatar
           src={user.profileImageUrl}
           isActive={user.isActive}
-          className="w-60 h-60"
+          size='xl'
           showIsActive={false}
         />
 

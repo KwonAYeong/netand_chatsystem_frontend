@@ -15,7 +15,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(mockStore.users[0]);
 
   const setUserById = (userId: number) => {
-    const found = mockStore.users.find((u: { userId: number; }) => u.userId === userId);
+    const found = mockStore.users.find((u) => u.userId === userId);
     if (found) setUser(found);
   };
 

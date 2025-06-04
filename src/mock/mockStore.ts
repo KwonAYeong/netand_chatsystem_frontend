@@ -1,4 +1,5 @@
 import { toCamel } from '../utils/transform';
+import { User } from '../types/user';
 
 import { mockChatRoomParticipants } from './chatRoomParticipants';
 import { mockChatRooms } from './chatRooms';
@@ -9,7 +10,7 @@ import { mockUserActivities } from './userActivities';
 import { mockUsers } from './users';
 
 export const mockStore = {
-  users: toCamel(mockUsers),
+  users: toCamel(mockUsers) as User[],
   chatRooms: toCamel(mockChatRooms),
   chatRoomParticipants: toCamel(mockChatRoomParticipants),
   messages: toCamel(mockMessages),
