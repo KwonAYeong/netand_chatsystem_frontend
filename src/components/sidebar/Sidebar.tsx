@@ -1,10 +1,9 @@
-// src/components/sidebar/Sidebar.tsx
-
 import { MdHome, MdSettings } from 'react-icons/md';
 import { FaClipboardList } from 'react-icons/fa6';
 import { useChatUI } from '../../hooks/useChatUI';
 import ProfileButton from './ProfileButton';
 import clsx from 'clsx';
+import UserSwitcher from '../common/UserSwitcher';
 
 const Sidebar = () => {
   const { activeMenu, setActiveMenu,setShowSettingsModal } = useChatUI();
@@ -30,8 +29,14 @@ const Sidebar = () => {
         </button>
     </div>
 
-    {/* 하단: 설정 + 프로필 */}
-    <div className="flex flex-col items-center space-y-6 text-2xl mt-4">
+    {/* 하단: 유저 전환 + 설정 + 프로필  */}
+      <div className="flex flex-col items-center space-y-6 text-2xl mt-4 relative">
+        {/* ✅ 유저 스위처 (설정 위에) */}
+        <div className="relative h-6 w-6 mb-2">
+          <UserSwitcher />
+        </div>
+
+        {/* 설정 버튼 */}
         <button
           onClick={() => setShowSettingsModal(true)}
           className="flex flex-col items-center hover:text-gray-600"
@@ -40,8 +45,10 @@ const Sidebar = () => {
           <span className="text-xs mt-1">설정</span>
         </button>
 
+        {/* 프로필 */}
         <ProfileButton />
-    </div>
+      </div>
+
     </aside>
 
   );
