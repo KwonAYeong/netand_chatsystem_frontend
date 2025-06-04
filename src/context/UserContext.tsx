@@ -1,7 +1,6 @@
 import { createContext, useContext, useState } from 'react';
-import { mockUsers } from '../mock/users';
-
-export type User = typeof mockUsers[number];
+import { mockStore } from '../mock/mockStore';
+import { User } from '../types/user';
 
 interface UserContextValue {
   user: User | null;
@@ -13,15 +12,15 @@ interface UserContextValue {
 const UserContext = createContext<UserContextValue | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(mockUsers[0]);
+  const [user, setUser] = useState<User | null>(mockStore.users[0]);
 
   const setUserById = (userId: number) => {
-    const found = mockUsers.find((u) => u.user_id === userId);
+    const found = mockStore.users.find((u: { userId: number; }) => u.userId === userId);
     if (found) setUser(found);
   };
 
   const updateIsActive = (isActive: boolean) => {
-    if (user) setUser({ ...user, is_active: isActive });
+    if (user) setUser({ ...user, isActive });
   };
 
   return (

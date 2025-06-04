@@ -11,7 +11,7 @@ const ProfileEditModal = () => {
     email: 'jeyoon@example.com',
     company: '카카오',
     rank: '대리',
-    profileImage: '',
+    profileImageUrl: '',
     isActive: true,
   };
 

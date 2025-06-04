@@ -12,7 +12,7 @@ const ProfileButton = () => {
     title="내 프로필"
     >
       <img
-        src={user?.profile_image_url || '/default_profile.jpg'}
+        src={user?.profileImageUrl || '/default_profile.jpg'}
         alt="프로필"
         className="w-full h-full object-cover"
       />

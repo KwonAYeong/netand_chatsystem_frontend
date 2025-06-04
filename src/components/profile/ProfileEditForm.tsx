@@ -8,14 +8,14 @@ interface ProfileEditFormProps {
     email: string;
     company: string;
     rank: string;
-    profileImage: string;
+    profileImageUrl: string;
   };
   onCancel: () => void;
 }
 
 const ProfileEditForm = ({ user, onCancel }: ProfileEditFormProps) => {
   const [form, setForm] = useState(user);
-  const [previewImage, setPreviewImage] = useState(user.profileImage);
+  const [previewImage, setPreviewImage] = useState(user.profileImageUrl);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const handleChange = (field: keyof typeof form, value: string) => {
