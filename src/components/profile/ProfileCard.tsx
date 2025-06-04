@@ -7,7 +7,7 @@ interface User {
   email: string;
   company: string;
   rank: string;
-  profileImage: string;
+  profileImageUrl: string;
   isActive: boolean;
 }
 
@@ -22,9 +22,9 @@ const ProfileCard = ({ user, onisActiveChange }: ProfileCardProps) => {
       {/* 상단 아바타 */}
       <div className="flex flex-col items-center gap-4">
         <UserAvatar
-          src={user.profileImage}
+          src={user.profileImageUrl}
           isActive={user.isActive}
-          className="w-60 h-60"
+          size='xl'
           showIsActive={false}
         />
 

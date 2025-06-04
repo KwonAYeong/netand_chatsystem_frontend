@@ -8,14 +8,15 @@ interface ProfileEditFormProps {
     email: string;
     company: string;
     rank: string;
-    profileImage: string;
+    profileImageUrl: string;
   };
   onCancel: () => void;
+  onSave: (form: any, imageFile: File | null) => void;
 }
 
-const ProfileEditForm = ({ user, onCancel }: ProfileEditFormProps) => {
+const ProfileEditForm = ({ user, onCancel,onSave }: ProfileEditFormProps) => {
   const [form, setForm] = useState(user);
-  const [previewImage, setPreviewImage] = useState(user.profileImage);
+  const [previewImage, setPreviewImage] = useState(user.profileImageUrl);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
   const handleChange = (field: keyof typeof form, value: string) => {
@@ -38,12 +39,13 @@ const ProfileEditForm = ({ user, onCancel }: ProfileEditFormProps) => {
     console.log('수정된 정보:', form);
     console.log('변경된 프로필 사진:', imageFile); // → 백엔드 연동 필요
     onCancel();
+    onSave(form, imageFile); 
   };
 
   return (
     <div className="p-4 space-y-4">
       <div className="flex flex-col items-center space-y-2">
-        <UserAvatar src={previewImage} className="w-32 h-32" showIsActive={false} />
+        <UserAvatar src={previewImage} size='lg' showIsActive={false} />
         <label className="relative inline-block cursor-pointer">
           <input
             type="file"
