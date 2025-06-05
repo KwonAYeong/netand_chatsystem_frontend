@@ -22,7 +22,7 @@ export const mockNotificationSettings = [
   {
     notification_setting_id: 3,
     user_id: 2,
-    chat_room_id: 102,
+    chat_room_id: null,
     alert_type: 'NONE',
     notification_start_time: null,
     notification_end_time: null,
