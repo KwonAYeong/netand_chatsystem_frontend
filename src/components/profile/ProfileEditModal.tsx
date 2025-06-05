@@ -46,7 +46,7 @@ const ProfileEditModal = () => {
   if (!profile) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative">
         <button
           onClick={() => setShowProfileModal(false)}
@@ -59,7 +59,7 @@ const ProfileEditModal = () => {
         <ProfileEditForm
           user={profile}
           onCancel={() => setShowProfileModal(false)}
-          onSave={handleSave} // 👈 저장은 부모가 처리
+          onSave={handleSave}
         />
       </div>
     </div>

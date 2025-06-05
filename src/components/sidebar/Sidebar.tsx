@@ -17,7 +17,7 @@ const Sidebar = () => {
         className="flex flex-col items-center hover:text-gray-600"
         >
         <MdHome className={clsx(activeMenu === 'home' && 'text-gray-800')} />
-        <span className="text-xs mt-1">홈</span>
+        <span className="text-xs mt-1 font-bold">홈</span>
         </button>
 
         <button
@@ -25,7 +25,7 @@ const Sidebar = () => {
         className="flex flex-col items-center hover:text-gray-600"
         >
         <FaClipboardList className={clsx(activeMenu === 'activity' && 'text-gray-800')} />
-        <span className="text-xs mt-1">내 활동</span>
+        <span className="text-xs mt-1 font-bold">내 활동</span>
         </button>
     </div>
 
@@ -42,7 +42,7 @@ const Sidebar = () => {
           className="flex flex-col items-center hover:text-gray-600"
         >
           <MdSettings className="text-gray-800" />
-          <span className="text-xs mt-1">설정</span>
+          <span className="text-xs mt-1 font-bold">설정</span>
         </button>
 
         {/* 프로필 */}
