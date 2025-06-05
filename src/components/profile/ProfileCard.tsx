@@ -1,6 +1,7 @@
 import { Mail, Building2, BadgeCheck } from 'lucide-react';
 import UserAvatar from '../common/UserAvatar';
 import UserisActiveBadge from '../common/UserStatusBadge';
+import IsActiveToggle from './IsActiveToggle';
 
 interface User {
   name: string;
@@ -24,7 +25,7 @@ const ProfileCard = ({ user, onisActiveChange }: ProfileCardProps) => {
         <UserAvatar
           src={user.profileImageUrl}
           isActive={user.isActive}
-          size='xl'
+          size="xl"
           showIsActive={false}
         />
 
@@ -35,24 +36,12 @@ const ProfileCard = ({ user, onisActiveChange }: ProfileCardProps) => {
             <UserisActiveBadge isActive={user.isActive} size={10} withText />
           </div>
 
-          {user.isActive ? (
-            <button
-              onClick={() => onisActiveChange(false)}
-              className="px-3 py-1 rounded bg-gray-500 hover:bg-gray-400 text-sm"
-            >
-              <span className="text-white font-semibold">자리비움</span>
-              <span className="text-black">으로 설정</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => onisActiveChange(true)}
-              className="px-3 py-1 rounded bg-gray-500 hover:bg-gray-400 text-sm"
-            >
-              <span className="text-white font-semibold">온라인</span>
-              <span className="text-black">으로 설정</span>
-            </button>
-          )}
-
+          {/* ✅ 상태 토글 버튼 (디자인 유지) */}
+          <IsActiveToggle
+            isActive={user.isActive}
+            onChange={onisActiveChange}
+            compact
+          />
         </div>
       </div>
 

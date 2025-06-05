@@ -3,29 +3,42 @@ import { useUser } from '../../context/UserContext';
 import { useChatUI } from '../../hooks/useChatUI';
 import ProfileHeader from './ProfileHeader';
 import ProfileCard from './ProfileCard';
-import { getUserProfileById } from '../../api/profile'; 
+import { getUserProfileById, patchUserStatus } from '../../api/profile';
 
 const USE_MOCK = true;
 
 const ProfilePanel = () => {
   const { setShowProfileModal, setShowProfile } = useChatUI();
-  const { user } = useUser(); // user.id만 담고 있다고 가정
+  const { user } = useUser(); 
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     if (!user?.userId) return;
+
     const fetchProfile = async () => {
-      if (USE_MOCK) {
-        const data = await getUserProfileById(user.userId); // mock 여부는 내부에서 처리
-        setProfile(data);
-      } else {
-        const data = await getUserProfileById(user.userId); // ✅ 여기 핵심
-        setProfile(data);
-      }
+      const data = await getUserProfileById(user.userId); 
+      setProfile(data);
     };
 
     fetchProfile();
   }, [user]);
+
+  const handleStatusChange = async (isActive: boolean) => {
+    const newStatus = isActive ? 'online' : 'away';
+
+    if (USE_MOCK) {
+      await patchUserStatus(profile.userId, newStatus);
+      setProfile((prev: any) => ({ ...prev, isActive }));
+    } else {
+      try {
+        await patchUserStatus(profile.userId, newStatus);
+        setProfile((prev: any) => ({ ...prev, isActive }));
+      } catch (err) {
+        console.error('❌ 상태 변경 실패', err);
+      }
+    }
+  };
+
 
   if (!profile) return null;
 
@@ -36,9 +49,7 @@ const ProfilePanel = () => {
       <div className="flex-1 overflow-y-auto">
         <ProfileCard
           user={profile}
-          onisActiveChange={(isActive) =>
-            setProfile({ ...profile, isActive })
-          }
+          onisActiveChange={handleStatusChange}
         />
       </div>
 
