@@ -1,34 +1,32 @@
-// src/context/ChatContext.tsx
-import { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface ChatContextValue {
   currentRoomId: string | null;
-  setCurrentRoomId: (roomId: string | null) => void;
-  roomNotificationSettings: Record<string, boolean>; // { roomId: 알림 여부 }
-  setRoomNotification: (roomId: string, enabled: boolean) => void;
+  currentRoomName: string | null;
+  setCurrentRoomId: (id: string) => void;
+  setCurrentRoomName: (name: string) => void;
 }
 
-const ChatContext = createContext<ChatContextValue | undefined>(undefined);
+const ChatContext = createContext<ChatContextValue>({
+  currentRoomId: null,
+  currentRoomName: null,
+  setCurrentRoomId: () => {},
+  setCurrentRoomName: () => {},
+});
 
-export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
+export function ChatProvider({ children }: { children: ReactNode }) {
   const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
-  const [roomNotificationSettings, setRoomNotificationSettings] = useState<Record<string, boolean>>({});
-
-  const setRoomNotification = (roomId: string, enabled: boolean) => {
-    setRoomNotificationSettings((prev) => ({ ...prev, [roomId]: enabled }));
-  };
+  const [currentRoomName, setCurrentRoomName] = useState<string | null>(null);
 
   return (
     <ChatContext.Provider
-      value={{ currentRoomId, setCurrentRoomId, roomNotificationSettings, setRoomNotification }}
+      value={{ currentRoomId, currentRoomName, setCurrentRoomId, setCurrentRoomName }}
     >
       {children}
     </ChatContext.Provider>
   );
-};
+}
 
-export const useChat = () => {
-  const context = useContext(ChatContext);
-  if (!context) throw new Error('useChat must be used within a ChatProvider');
-  return context;
-};
+export function useChat() {
+  return useContext(ChatContext);
+}
