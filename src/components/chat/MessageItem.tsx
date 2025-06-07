@@ -10,13 +10,8 @@ interface Props {
 
 export default function MessageItem({ message, showAvatar }: Props) {
   const { user } = useUser();
-  const isMine = user?.userId === message.sender.id;
   const [hovered, setHovered] = useState(false);
-
-  // 파일 확장자 판별 함수
-  const isImage = (url: string) => {
-    return /\.(jpeg|jpg|png|gif|webp)$/i.test(url);
-  };
+  const isMine = user?.userId === message.sender.id;
 
   return (
     <div
@@ -24,10 +19,14 @@ export default function MessageItem({ message, showAvatar }: Props) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* 프로필 */}
+      {/* 프로필 이미지 */}
       {showAvatar ? (
         <img
-          src={message.sender.profileImageUrl || '/default-profile.png'}
+          src={
+            isMine
+              ? user?.profileImageUrl || '/default-profile.png'
+              : message.sender.profileImageUrl || '/default-profile.png'
+          }
           alt="profile"
           className="w-8 h-8 rounded-full mt-1"
         />
@@ -37,32 +36,33 @@ export default function MessageItem({ message, showAvatar }: Props) {
 
       {/* 본문 영역 */}
       <div className="flex flex-col flex-1">
+        {/* 이름 + 시간 */}
         {showAvatar && (
-          <div className="text-sm font-semibold text-gray-700 mb-1">
-            {message.sender.name}
+          <div className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
+            <span>{isMine ? user?.name : message.sender.name}</span>
+            <span className="text-xs text-gray-400 font-normal">{message.time}</span>
           </div>
         )}
 
+        {/* 메시지 + 파일 */}
         <div className="text-sm whitespace-pre-wrap break-words px-3 py-1 rounded-md group-hover:bg-gray-100">
-          {/* 메시지 텍스트 */}
           {message.content}
 
-          {/* 파일 미리보기 or 다운로드 */}
           {message.fileUrl && (
-            <div className="mt-2">
-              {isImage(message.fileUrl) ? (
+            <div className="mt-1">
+              {message.fileUrl.match(/\.(jpeg|jpg|png|gif|png|webp)$/i) ? (
                 <img
                   src={message.fileUrl}
-                  alt="uploaded"
-                  className="max-w-xs max-h-64 rounded border"
+                  alt="preview"
+                  className="max-w-xs mt-2 rounded"
                 />
               ) : (
                 <a
                   href={message.fileUrl}
                   download
-                  className="text-blue-500 underline text-sm"
+                  className="text-blue-500 text-sm underline"
                 >
-                  파일 다운로드
+                  첨부파일 다운로드
                 </a>
               )}
             </div>
@@ -70,7 +70,7 @@ export default function MessageItem({ message, showAvatar }: Props) {
         </div>
       </div>
 
-      {/* 반응 버튼 */}
+      {/* 오른쪽 반응 버튼 */}
       {hovered && (
         <div className="absolute right-2 top-1 flex gap-2">
           <button className="text-gray-400 hover:text-black">

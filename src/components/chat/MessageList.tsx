@@ -25,7 +25,20 @@ export default function MessageList({ messages }: Props) {
 
           {msgs.map((msg, index) => {
             const prev = msgs[index - 1];
-            const showAvatar = !prev || prev.sender.id !== msg.sender.id;
+
+            let showAvatar = false;
+
+            if (!prev) {
+              showAvatar = true;
+            } else {
+              const sameSender = prev.sender.id === msg.sender.id;
+              const prevTime = new Date(prev.createdAt).getTime();
+              const currTime = new Date(msg.createdAt).getTime();
+              const timeDiffInMinutes = (currTime - prevTime) / (1000 * 60);
+
+              // ✅ 같은 사람이라도 1분 이상 차이 나면 다시 표시
+              showAvatar = !sameSender || timeDiffInMinutes >= 1;
+            }
 
             return (
               <MessageItem

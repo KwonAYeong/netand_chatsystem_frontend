@@ -1,49 +1,57 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useChat } from '../../context/ChatContext';
 import { useUser } from '../../context/UserContext';
+import { mockStore } from '../../mock/mockStore';
 
-interface ChatRoom {
-  chatRoomId: number;
-  targetUserId: number;
-  targetUserName: string;
+interface ChatListItem {
+  userId: number;
+  name: string;
 }
+
+type MockChatRoom = {
+  chatRoomId: number;
+  chatRoomType: 'dm' | 'group';
+};
+
+type MockParticipant = {
+  chatRoomId: number;
+  userId: number;
+};
 
 export default function DMList() {
   const { setCurrentRoomId, setCurrentRoomName, currentRoomId } = useChat();
   const { user } = useUser();
-  const [dmList, setDmList] = useState<ChatRoom[]>([]);
+  const [userList, setUserList] = useState<ChatListItem[]>([]);
 
-  // ✅ DM 목록 불러오기
   useEffect(() => {
-    if (!user?.userId) return;
-
-    const fetchDMList = async () => {
-      try {
-        const res = await axios.get(`/chat/dm/list/${user.userId}`);
-        setDmList(res.data); // 백엔드 응답 형식에 맞게
-      } catch (err) {
-        console.error('DM 목록 불러오기 실패:', err);
-      }
-    };
-
-    fetchDMList();
+    const others = mockStore.users
+      .filter((u) => u.userId !== user?.userId)
+      .map((u) => ({
+        userId: u.userId,
+        name: u.name,
+      }));
+    setUserList(others);
   }, [user]);
 
-  // ✅ DM 채팅방 선택 or 생성
-  const handleSelectUser = async (targetUserId: number, targetUserName: string) => {
-    if (!user) return;
+  const handleSelectUser = (otherUser: ChatListItem) => {
+    const dmRoom = mockStore.chatRooms.find((room: MockChatRoom) => {
+      if (room.chatRoomType !== 'dm') return false;
 
-    try {
-      const res = await axios.post('/chat/dm', {
-        userAId: user.userId,
-        userBId: targetUserId,
-      });
-      const chatRoomId = res.data;
-      setCurrentRoomId(String(chatRoomId));
-      setCurrentRoomName(targetUserName);
-    } catch (err) {
-      console.error('DM 채팅방 생성/조회 실패:', err);
+      const participants = mockStore.chatRoomParticipants
+    .filter((p: MockParticipant) => p.chatRoomId === room.chatRoomId)
+    .map((p: MockParticipant) => p.userId); // ✅ 타입 명시
+
+
+      return (
+        participants.includes(user!.userId) && participants.includes(otherUser.userId)
+      );
+    });
+
+    if (dmRoom) {
+      setCurrentRoomId(String(dmRoom.chatRoomId));
+      setCurrentRoomName(otherUser.name);
+    } else {
+      alert('해당 유저와의 DM 채팅방이 없습니다.');
     }
   };
 
@@ -51,15 +59,15 @@ export default function DMList() {
     <div className="p-4">
       <h2 className="font-bold mb-2">다이렉트 메세지</h2>
       <ul>
-        {dmList.map((dm) => (
+        {userList.map((other) => (
           <li
-            key={dm.chatRoomId}
+            key={other.userId}
             className={`cursor-pointer p-2 rounded hover:bg-purple-100 ${
-              currentRoomId === String(dm.chatRoomId) ? 'bg-purple-200' : ''
+              currentRoomId === String(other.userId) ? 'bg-purple-200' : ''
             }`}
-            onClick={() => handleSelectUser(dm.targetUserId, dm.targetUserName)}
+            onClick={() => handleSelectUser(other)}
           >
-            {dm.targetUserName}
+            {other.name}
           </li>
         ))}
       </ul>

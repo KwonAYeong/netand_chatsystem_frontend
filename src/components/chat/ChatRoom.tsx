@@ -1,11 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
-import axios from 'axios';
 import { useUser } from '../../context/UserContext';
 import { useChat } from '../../context/ChatContext';
 import Header from './Header';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
+import { mockStore } from '../../mock/mockStore';
 import type { Message } from '../../types/message';
+
+type MockMessage = {
+  chatMessageId: number;
+  chatRoomId: number;
+  senderId: number;
+  content: string;
+  createdAt: string;
+  fileUrl?: string;
+};
 
 export default function ChatRoom() {
   const { user } = useUser();
@@ -13,46 +22,47 @@ export default function ChatRoom() {
   const [messages, setMessages] = useState<Message[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // ✅ 메시지 불러오기
+  // ✅ 메시지 불러오기 (mock 기반)
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const res = await axios.get(`/chat/message/${currentRoomId}`);
-        const enriched: Message[] = res.data.map((msg: any) => ({
-          id: msg.chatMessageId,
-          sender: {
-            id: msg.senderId,
-            name: msg.senderName,
-            profileImageUrl: msg.profileImageUrl,
-          },
-          content: msg.content,
-          time: new Date(msg.createdAt).toLocaleTimeString('ko-KR', {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
-          createdAt: msg.createdAt,
-        }));
-        setMessages(enriched);
-      } catch (error) {
-        console.error('메시지 불러오기 실패:', error);
-      }
-    };
+    if (!currentRoomId) return;
 
-    if (currentRoomId) fetchMessages();
+    const filtered: MockMessage[] = mockStore.messages.filter(
+      (msg: MockMessage) => String(msg.chatRoomId) === String(currentRoomId)
+    );
+
+    const enriched: Message[] = filtered.map((msg: MockMessage) => {
+      const sender = mockStore.users.find((u) => u.userId === msg.senderId);
+      return {
+        id: msg.chatMessageId,
+        sender: {
+          id: sender?.userId || 0,
+          name: sender?.name || '알 수 없음',
+          profileImageUrl: (sender as any)?.profile_image_url || '', // 타입 우회
+        },
+        content: msg.content,
+        fileUrl: msg.fileUrl,
+        time: new Date(msg.createdAt).toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        createdAt: msg.createdAt,
+      };
+    });
+
+    setMessages(enriched);
   }, [currentRoomId]);
 
-  // ✅ 메시지 맨 아래로 스크롤
+  // ✅ 자동 스크롤
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // ✅ 메시지 전송
-  const handleSend = async (text: string) => {
+  // ✅ 메시지 & 파일 전송 (mock 방식)
+  const handleSend = (text: string, file?: File) => {
     if (!user || !currentRoomId) return;
 
     const now = new Date();
 
-    // 낙관적 UI
     const newMsg: Message = {
       id: Date.now(),
       sender: {
@@ -61,23 +71,15 @@ export default function ChatRoom() {
         profileImageUrl: user.profileImageUrl,
       },
       content: text,
+      fileUrl: file ? URL.createObjectURL(file) : undefined, // mock에서 임시 미리보기 URL
       time: now.toLocaleTimeString('ko-KR', {
         hour: '2-digit',
         minute: '2-digit',
       }),
       createdAt: now.toISOString(),
     };
-    setMessages((prev) => [...prev, newMsg]);
 
-    try {
-      await axios.post(`/chat/message`, {
-        chatRoomId: currentRoomId,
-        senderId: user.userId,
-        content: text,
-      });
-    } catch (error) {
-      console.error('메시지 전송 실패:', error);
-    }
+    setMessages((prev) => [...prev, newMsg]);
   };
 
   if (!user) {
