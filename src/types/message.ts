@@ -6,7 +6,7 @@ export interface Message {
     profileImageUrl?: string; // ✅ 선택적 필드로 추가
   };
   content: string;
-  time: string;
+  time?: string;
   createdAt: string;
   fileUrl?: string; // ✅ 추가됨
 }

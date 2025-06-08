@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { mockStore } from '../mock/mockStore'; // ✅ mockStore 불러오기
+// src/context/UserContext.tsx
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { mockUsers } from '../mock/users';
 
-// 유저 정보 인터페이스
 export interface User {
   userId: number;
   name: string;
@@ -9,28 +9,48 @@ export interface User {
   isActive?: boolean;
 }
 
-// 컨텍스트 타입 정의
 interface UserContextValue {
   user: User | null;
   setUser: (user: User | null) => void;
-  setUserById: (userId: number) => void;
+  setUserById: (id: number) => void;
 }
 
-// 컨텍스트 초기화
 const UserContext = createContext<UserContextValue>({
   user: null,
   setUser: () => {},
   setUserById: () => {},
 });
 
-// 프로바이더 컴포넌트
 export function UserProvider({ children }: { children: ReactNode }) {
-  // 기본 로그인 유저는 mockStore.users[0]
-  const [user, setUser] = useState<User | null>(mockStore.users[0]);
+  const [user, setUser] = useState<User | null>(null);
 
-  const setUserById = (userId: number) => {
-    const found = mockStore.users.find((u) => u.userId === userId);
-    if (found) setUser(found);
+  useEffect(() => {
+    console.log('✅ UserProvider 동작');
+    console.log('✅ mockUsers:', mockUsers);
+
+    const defaultUser = mockUsers[0];
+    console.log('✅ defaultUser:', defaultUser);
+
+    if (defaultUser) {
+      setUser({
+        userId: defaultUser.user_id,
+        name: defaultUser.name,
+        profileImageUrl: defaultUser.profile_image_url,
+        isActive: defaultUser.is_active,
+      });
+    }
+  }, []);
+
+  const setUserById = (id: number) => {
+    const found = mockUsers.find((u) => u.user_id === id);
+    if (found) {
+      setUser({
+        userId: found.user_id,
+        name: found.name,
+        profileImageUrl: found.profile_image_url,
+        isActive: found.is_active,
+      });
+    }
   };
 
   return (
@@ -40,7 +60,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// 커스텀 훅
 export function useUser() {
   return useContext(UserContext);
 }
