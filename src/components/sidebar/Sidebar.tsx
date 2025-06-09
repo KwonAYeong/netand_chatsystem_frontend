@@ -1,5 +1,4 @@
-import { MdHome, MdSettings } from 'react-icons/md';
-import { FaClipboardList } from 'react-icons/fa6';
+import { HomeIcon, SettingsIcon, ClipboardListIcon } from '../../icons';
 import { useChatUI } from '../../hooks/useChatUI';
 import ProfileButton from './ProfileButton';
 import clsx from 'clsx';
@@ -16,7 +15,7 @@ const Sidebar = () => {
         onClick={() => setActiveMenu('home')}
         className="flex flex-col items-center hover:text-gray-600"
         >
-        <MdHome className={clsx(activeMenu === 'home' && 'text-gray-800')} />
+        <HomeIcon className={clsx(activeMenu === 'home' && 'text-gray-800')} />
         <span className="text-xs mt-1 font-bold">홈</span>
         </button>
 
@@ -24,7 +23,7 @@ const Sidebar = () => {
         onClick={() => setActiveMenu('activity')}
         className="flex flex-col items-center hover:text-gray-600"
         >
-        <FaClipboardList className={clsx(activeMenu === 'activity' && 'text-gray-800')} />
+        <ClipboardListIcon className={clsx(activeMenu === 'activity' && 'text-gray-800')} />
         <span className="text-xs mt-1 font-bold">내 활동</span>
         </button>
     </div>
@@ -41,7 +40,7 @@ const Sidebar = () => {
           onClick={() => setShowSettingsModal(true)}
           className="flex flex-col items-center hover:text-gray-600"
         >
-          <MdSettings className="text-gray-800" />
+          <SettingsIcon className="text-gray-800" />
           <span className="text-xs mt-1 font-bold">설정</span>
         </button>
 

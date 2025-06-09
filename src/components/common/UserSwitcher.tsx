@@ -1,7 +1,8 @@
 // components/sidebar/UserSwitcher.tsx
 import { useState } from 'react';
 import { useUser } from '../../context/UserContext';
-import { MdPerson } from 'react-icons/md';
+import { MdPerson } from "react-icons/md";
+const PersonIcon = MdPerson as unknown as React.FC<React.SVGProps<SVGSVGElement>>;
 
 const dummyUserIds = [1, 2, 3, 4];
 
@@ -32,7 +33,7 @@ const UserSwitcher = () => {
                 user?.userId === id ? 'bg-blue-100' : ''
               }`}
             >
-              <MdPerson className="inline-block mr-1" />
+              <PersonIcon className="inline-block mr-1" />
               User {id}
             </button>
           ))}

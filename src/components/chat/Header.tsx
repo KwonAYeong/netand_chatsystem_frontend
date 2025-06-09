@@ -1,5 +1,6 @@
 import React from 'react';
-import { FiSettings } from 'react-icons/fi';
+import { FiSettings } from "react-icons/fi";
+const SettingsIcon = FiSettings as unknown as React.FC<React.SVGProps<SVGSVGElement>>;
 
 interface HeaderProps {
   name: string;
@@ -17,7 +18,7 @@ export default function Header({ name, profileUrl }: HeaderProps) {
         />
         <span className="font-bold">{name}</span>
       </div>
-      <FiSettings className="text-xl cursor-pointer" />
+      <SettingsIcon className="text-xl cursor-pointer" />
     </div>
   );
 }

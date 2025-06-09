@@ -1,7 +1,11 @@
 import { JSX, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import UserAvatar from '../common/UserAvatar';
-import { FaAt, FaSmile, FaBookmark } from 'react-icons/fa';
+import { FaAt, FaSmile, FaBookmark } from "react-icons/fa";
+
+const AtIcon = FaAt as unknown as React.FC<React.SVGProps<SVGSVGElement>>;
+const SmileIcon = FaSmile as unknown as React.FC<React.SVGProps<SVGSVGElement>>;
+const BookmarkIcon = FaBookmark as unknown as React.FC<React.SVGProps<SVGSVGElement>>;
 
 type ActivityType = 'all' | 'mention' | 'reaction' | 'bookmark';
 
@@ -59,9 +63,9 @@ const dummyActivities: ActivityItem[] = [
 
 const tabLabels: { label: string; type: ActivityType; icon: JSX.Element }[] = [
   { label: '전체', type: 'all', icon: <></> },
-  { label: '멘션', type: 'mention', icon: <FaAt size={12} className="inline" /> },
-  { label: '반응', type: 'reaction', icon: <FaSmile size={12} className="inline" /> },
-  { label: '북마크', type: 'bookmark', icon: <FaBookmark size={12} className="inline" /> },
+  { label: '멘션', type: 'mention', icon: <AtIcon className="inline" /> },
+  { label: '반응', type: 'reaction', icon: <SmileIcon className="inline" /> },
+  { label: '북마크', type: 'bookmark', icon: <BookmarkIcon className="inline" /> },
 ];
 
 const getSummary = (item: ActivityItem) => {
