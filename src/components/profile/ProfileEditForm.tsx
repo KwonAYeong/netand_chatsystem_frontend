@@ -7,7 +7,7 @@ interface ProfileEditFormProps {
     name: string;
     email: string;
     company: string;
-    rank: string;
+    position: string;
     profileImageUrl: string;
   };
   onCancel: () => void;
@@ -62,7 +62,7 @@ const ProfileEditForm = ({ user, onCancel,onSave }: ProfileEditFormProps) => {
       <EditableField label="이메일" value={form.email} disabled />
       <EditableField label="이름" value={form.name} onChange={(v) => handleChange('name', v)} />
       <EditableField label="회사" value={form.company} onChange={(v) => handleChange('company', v)} />
-      <EditableField label="직급" value={form.rank} onChange={(v) => handleChange('rank', v)} />
+      <EditableField label="직급" value={form.position} onChange={(v) => handleChange('position', v)} />
 
       <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
         <button

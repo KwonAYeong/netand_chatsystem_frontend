@@ -1,12 +1,15 @@
-import ChannelList from './ChannelList';
-import DMList from './DMList'; // ✅ 여기가 DMList로 import 되어야 함
+import ChatList from './ChatList';
 
-const ChatMenuPanel = () => {
+interface Props {
+  currentUserId: number;
+  onSelectRoom: (id: number, name: string) => void;
+}
+
+const ChatMenuPanel = ({ currentUserId, onSelectRoom }: Props) => {
   return (
-    <aside className="w-72 bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto">
-      <ChannelList />
-      <DMList /> {/* ✅ 유저 클릭 가능 목록 */}
-    </aside>
+    <div className="w-[250px] border-r border-gray-200 bg-[#f5f6f8]">
+      <ChatList currentUserId={currentUserId} onSelectRoom={onSelectRoom} />
+    </div>
   );
 };
 

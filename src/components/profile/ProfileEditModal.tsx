@@ -27,7 +27,7 @@ const ProfileEditModal = () => {
       const updateData: any = {
         name: form.name,
         company: form.company,
-        rank: form.rank,
+        position: form.position,
       };
 
       if (imageFile) {

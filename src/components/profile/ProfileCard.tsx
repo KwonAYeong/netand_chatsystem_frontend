@@ -7,7 +7,7 @@ interface User {
   name: string;
   email: string;
   company: string;
-  rank: string;
+  position: string;
   profileImageUrl: string;
   isActive: boolean;
 }
@@ -57,7 +57,7 @@ const ProfileCard = ({ user, onisActiveChange }: ProfileCardProps) => {
         </div>
         <div className="flex items-center gap-2">
           <BadgeCheck size={16} />
-          <span>{user.rank}</span>
+          <span>{user.position}</span>
         </div>
       </div>
     </div>

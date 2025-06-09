@@ -1,41 +1,20 @@
-import axios from 'axios';
-import { mockStore } from '../mock/mockStore';
-
-const USE_MOCK = true;
+import { api } from './axios';
 
 export const getUserProfileById = async (id: number) => {
-  if (USE_MOCK) {
-    const user = mockStore.users.find((u) => u.userId === id);
-    return user ?? null;
-  }
 
-  const res = await axios.get(`/api/profile/${id}`);
+  const res = await api.get(`/api/profile/${id}`);
+  return res.data;
+};
+export const getNotificationSettings = async (userId: number) => {
+  const res = await api.get(`/api/settings/notifications/${userId}`);
   return res.data;
 };
 export const patchUserStatus = async (id: number, status: 'online' | 'away') => {
-  if (USE_MOCK) {
-    const idx = mockStore.users.findIndex((u) => u.userId === id);
-    if (idx !== -1) {
-      mockStore.users[idx].isActive = status === 'online';
-      return mockStore.users[idx];
-    }
-    throw new Error('사용자 없음');
-  }
-
-  const res = await axios.patch(`/api/users/${id}/status`, { status });
+  const res = await api.patch(`/api/users/${id}/status`, { status });
   return res.data;
 };
 
 export const updateUserProfile = async (id: number, data: any) => {
-  if (USE_MOCK) {
-    const idx = mockStore.users.findIndex((u) => u.userId === id);
-    if (idx !== -1) {
-      mockStore.users[idx] = { ...mockStore.users[idx], ...data };
-      return mockStore.users[idx];
-    }
-    throw new Error('사용자 없음');
-  }
-
   const formData = new FormData();
   Object.entries(data).forEach(([key, value]) => {
     if (value instanceof Blob) {
@@ -45,7 +24,7 @@ export const updateUserProfile = async (id: number, data: any) => {
     }
   });
 
-  const res = await axios.put(`/api/profile/${id}`, formData, {
+  const res = await api.put(`/api/profile/${id}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return res.data;

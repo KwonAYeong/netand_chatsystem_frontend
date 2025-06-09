@@ -4,7 +4,7 @@ export type User = {
   email: string;
   profileImageUrl: string;
   company: string;
-  rank: string;
+  position: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
