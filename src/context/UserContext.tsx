@@ -1,10 +1,9 @@
 // src/context/UserContext.tsx
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { mockUsers } from '../mock/users';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface User {
   userId: number;
-  name: string;
+  name?: string;
   profileImageUrl?: string;
   isActive?: boolean;
 }
@@ -22,35 +21,13 @@ const UserContext = createContext<UserContextValue>({
 });
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    console.log('✅ UserProvider 동작');
-    console.log('✅ mockUsers:', mockUsers);
-
-    const defaultUser = mockUsers[0];
-    console.log('✅ defaultUser:', defaultUser);
-
-    if (defaultUser) {
-      setUser({
-        userId: defaultUser.user_id,
-        name: defaultUser.name,
-        profileImageUrl: defaultUser.profile_image_url,
-        isActive: defaultUser.is_active,
-      });
-    }
-  }, []);
+  const [user, setUser] = useState<User | null>({ userId: 1 });
 
   const setUserById = (id: number) => {
-    const found = mockUsers.find((u) => u.user_id === id);
-    if (found) {
-      setUser({
-        userId: found.user_id,
-        name: found.name,
-        profileImageUrl: found.profile_image_url,
-        isActive: found.is_active,
-      });
-    }
+    // userId 만 세팅 → 나머지 값은 이후 profile API 호출 시 채우면 됨
+    setUser({
+      userId: id,
+    });
   };
 
   return (
