@@ -9,6 +9,7 @@ import { useChatUI } from '../../hooks/useChatUI';
 import ProfilePanel from '../profile/ProfilePanel';
 import ProfileEditModal from '../profile/ProfileEditModal';
 import SettingsModal from '../settings/SettingsModal';
+import WelcomeScreen from '../common/WelcomeScreen'; // ✅ 추가
 
 const ChatLayout = () => {
   const { user } = useUser();
@@ -24,7 +25,8 @@ const ChatLayout = () => {
 
   return (
     <div className="flex h-screen relative">
-      <Sidebar />
+      {/* ✅ Sidebar에 clearSelectedRoom 전달 */}
+      <Sidebar clearSelectedRoom={() => setSelectedRoom(null)} />
 
       {/* 중앙 패널 */}
       {activeMenu === 'home' && (
@@ -44,12 +46,14 @@ const ChatLayout = () => {
           <ChatRoom
             chatRoomId={selectedRoom.id}
             userId={user.userId}
-            chatRoomName={selectedRoom.name} /* ✅ 여기만 수정 */
+            chatRoomName={selectedRoom.name}
           />
         ) : (
-          <div className="flex items-center justify-center h-full text-gray-400">
-            채팅방을 선택하세요.
-          </div>
+          // ✅ WelcomeScreen으로 변경
+          <WelcomeScreen
+            userName={user.name|| '사용자자'}
+            profileImage={user.profileImageUrl || '/default-profile.png'}
+          />
         )}
 
         {showProfile && (

@@ -1,6 +1,11 @@
 // src/components/chat/ChatRoom.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { getMessages, sendMessage, sendFileMessage } from '../../api/chat';
+import {
+  getMessages,
+  sendMessage,
+  sendFileMessage,
+  updateLastReadMessage,
+} from '../../api/chat';
 import Header from './Header';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
@@ -21,7 +26,7 @@ export default function ChatRoom({ chatRoomId, userId, chatRoomName }: ChatRoomP
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // 💬 메시지 초기 로딩
+    // 1. 메시지 불러오기
     getMessages(chatRoomId)
       .then((res) => {
         const transformed = res.data.map(transform);
@@ -29,7 +34,12 @@ export default function ChatRoom({ chatRoomId, userId, chatRoomName }: ChatRoomP
       })
       .catch((err) => console.error('❌ 메시지 불러오기 실패:', err));
 
-    // 🔌 WebSocket 연결
+    // 2. 채팅방 입장 시 읽음 처리
+    updateLastReadMessage(chatRoomId, userId)
+      .then(() => console.log('✅ 읽음 처리 완료'))
+      .catch((err) => console.error('❌ 읽음 처리 실패:', err));
+
+    // 3. WebSocket 연결
     const socket = new SockJS('http://localhost:8080/ws');
     const client = new Client({
       webSocketFactory: () => socket,
@@ -75,7 +85,6 @@ export default function ChatRoom({ chatRoomId, userId, chatRoomName }: ChatRoomP
         res = await sendMessage(messagePayload);
       }
 
-      // ✅ 연결된 경우에만 publish
       if (clientRef.current && clientRef.current.connected) {
         clientRef.current.publish({
           destination: '/pub/chat.sendMessage',
