@@ -1,6 +1,6 @@
 // src/components/chat/Header.tsx
 import React from 'react';
-import { FiSettings } from "react-icons/fi";
+import { SettingsIcon } from "../../icons";
 
 interface HeaderProps {
   chatRoomName: string;
@@ -18,7 +18,7 @@ export default function Header({ chatRoomName, profileUrl }: HeaderProps) {
         />
         <span className="font-bold">{chatRoomName}</span>
       </div>
-      <FiSettings className="text-xl cursor-pointer" />
+      <SettingsIcon className="text-xl cursor-pointer" />
     </div>
   );
 }
