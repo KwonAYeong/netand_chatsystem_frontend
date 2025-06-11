@@ -1,4 +1,5 @@
-import React from 'react';
+// src/components/chat/MessageList.tsx
+import React, { useEffect, useRef } from 'react';
 import MessageItem from './MessageItem';
 import type { Message } from '../../types/message';
 
@@ -6,50 +7,49 @@ interface Props {
   messages: Message[];
 }
 
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'short',
+  });
+}
+
+function isSameDate(a: string, b: string) {
+  return new Date(a).toDateString() === new Date(b).toDateString();
+}
+
 export default function MessageList({ messages }: Props) {
-  const grouped = messages.reduce((acc: Record<string, Message[]>, msg) => {
-    const date = msg.createdAt.split('T')[0];
-    acc[date] = acc[date] || [];
-    acc[date].push(msg);
-    return acc;
-  }, {});
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  let lastDate: string | null = null;
 
   return (
-    <>
-      {Object.entries(grouped).map(([date, msgs]) => (
-        <div key={date}>
-          {/* ✅ 날짜는 가운데 정렬 유지 */}
-          <div className="text-center text-xs text-gray-400 my-4">
-            {date}
-          </div>
+    <div className="flex flex-col space-y-2">
+      {messages.map((msg, index) => {
+        const showDateHeader = !lastDate || !isSameDate(lastDate, msg.createdAt);
+        lastDate = msg.createdAt;
 
-          {msgs.map((msg, index) => {
-            const prev = msgs[index - 1];
-
-            let showAvatar = false;
-
-            if (!prev) {
-              showAvatar = true;
-            } else {
-              const sameSender = prev.sender.id === msg.sender.id;
-              const prevTime = new Date(prev.createdAt).getTime();
-              const currTime = new Date(msg.createdAt).getTime();
-              const timeDiffInMinutes = (currTime - prevTime) / (1000 * 60);
-
-              // ✅ 같은 사람이라도 1분 이상 차이 나면 다시 표시
-              showAvatar = !sameSender || timeDiffInMinutes >= 1;
-            }
-
-            return (
-              <MessageItem
-                key={msg.id}
-                message={msg}
-                showAvatar={showAvatar}
-              />
-            );
-          })}
-        </div>
-      ))}
-    </>
+        return (
+          <React.Fragment key={msg.id}>
+            {showDateHeader && (
+              <div className="text-center text-xs text-gray-500 my-2">
+                <div className="inline-block px-3 py-1 bg-gray-100 rounded-full">
+                  {formatDate(msg.createdAt)}
+                </div>
+              </div>
+            )}
+            <MessageItem message={msg} showAvatar={true} />
+          </React.Fragment>
+        );
+      })}
+      <div ref={bottomRef} />
+    </div>
   );
 }

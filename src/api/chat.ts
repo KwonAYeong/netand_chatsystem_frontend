@@ -30,3 +30,12 @@ export const sendFileMessage = (chatRoomId: number, senderId: number, file: File
 
   return api.post(`/chat/message/file`, formData);
 };
+
+
+// ✅ 메시지 읽음 처리 (채팅방 입장 시)
+export const updateLastReadMessage = (chatRoomId: number, userId: number) => {
+  return api.patch(`/chat/last-read-message`, {
+    chatRoomId,
+    userId,
+  });
+};

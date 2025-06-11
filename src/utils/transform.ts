@@ -1,16 +1,24 @@
-import camelcaseKeys from 'camelcase-keys';
-import snakecaseKeys from 'snakecase-keys';
+// src/utils/transform.ts
+import type { Message } from '../types/message';
 
-export const toCamel = <T = any>(data: unknown): T => {
-  if (typeof data === 'object' && data !== null) {
-    return camelcaseKeys(data as Record<string, unknown>, { deep: true }) as T;
-  }
-  return data as T;
-};
+export const transform = (res: any): Message => ({
+  id: res.messageId,
+  chatRoomId: res.chatRoomId,
+  sender: {
+    id: res.senderId,
+    name: res.senderName,
+    profileImageUrl: res.senderProfileImage,
+  },
+  content: res.content,
+  messageType: res.messageType as 'TEXT' | 'FILE',
+  fileUrl: res.fileUrl || res.file_url, // 🔥 핵심: snake_case 대응
+  createdAt: res.createdAt,
+});
 
-export const toSnake = (data: unknown): any => {
-  if (typeof data === 'object' && data !== null) {
-    return snakecaseKeys(data as Record<string, unknown>, { deep: true });
-  }
-  return data;
+/**
+ * 기존 메시지 배열에 중복 ID가 없을 때만 새 메시지 추가
+ */
+export const appendIfNotExists = (messages: Message[], newMessage: Message): Message[] => {
+  const exists = messages.some((m) => m.id === newMessage.id);
+  return exists ? messages : [...messages, newMessage];
 };
