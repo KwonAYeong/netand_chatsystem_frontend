@@ -1,8 +1,9 @@
 // src/components/sidebar/ChatList.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { getChatRoomsByUser } from '../../api/chat';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
+import InviteUser from './InviteUser';
 
 interface Props {
   currentUserId: number;
@@ -22,8 +23,8 @@ interface ChatRoom {
 export default function ChatList({ currentUserId, onSelectRoom }: Props) {
   const [dmRooms, setDmRooms] = useState<ChatRoom[]>([]);
 
-  // ✅ 채팅방 목록 불러오기
-  useEffect(() => {
+  // ✅ 1. 채팅방 목록 불러오기 함수 분리
+  const fetchChatRooms = useCallback(() => {
     getChatRoomsByUser(currentUserId)
       .then((res) => {
         console.log('✅ 받은 채팅방 목록:', res.data);
@@ -33,6 +34,11 @@ export default function ChatList({ currentUserId, onSelectRoom }: Props) {
         console.error('❌ 채팅방 목록 불러오기 실패:', err);
       });
   }, [currentUserId]);
+
+  // ✅ 2. mount 시 목록 불러오기
+  useEffect(() => {
+    fetchChatRooms();
+  }, [fetchChatRooms]);
 
   // ✅ WebSocket으로 unreadMessageCount 실시간 수신
   useEffect(() => {
@@ -62,7 +68,6 @@ export default function ChatList({ currentUserId, onSelectRoom }: Props) {
     });
 
     client.activate();
-
     return () => {
       client.deactivate();
     };
@@ -72,7 +77,6 @@ export default function ChatList({ currentUserId, onSelectRoom }: Props) {
   const handleSelectRoom = (chatRoomId: number, chatRoomName: string) => {
     onSelectRoom(chatRoomId, chatRoomName);
 
-    // 프론트 상태에서 해당 채팅방의 뱃지 제거
     setDmRooms((prev) =>
       prev.map((room) =>
         room.chatRoomId === chatRoomId
@@ -110,6 +114,11 @@ export default function ChatList({ currentUserId, onSelectRoom }: Props) {
         ) : (
           <div className="text-gray-400 text-sm">채팅방이 없습니다</div>
         )}
+      </div>
+
+      {/* ✅ 초대 버튼 - 채팅방 생성 후 목록 다시 불러오도록 설정 */}
+      <div className="mt-4">
+        <InviteUser senderId={currentUserId} onCreated={fetchChatRooms} />
       </div>
     </div>
   );
