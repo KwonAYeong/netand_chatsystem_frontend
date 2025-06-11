@@ -1,50 +1,48 @@
-// src/utils/websocket.ts
-import SockJS from 'sockjs-client';
+// src/hooks/useWebSocket.ts
 import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import { useEffect, useRef } from 'react';
 
-let stompClient: Client;
+const WEBSOCKET_URL = 'http://localhost:8080/ws'; // 로컬 백엔드의 엔드포인트
 
-export const connectWebSocket = (
-  chatRoomId: number,
-  onMessageReceived: (msg: any) => void
-) => {
-  stompClient = new Client({
-    brokerURL: undefined, // SockJS 사용
-    webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
-    reconnectDelay: 5000,
-    onConnect: () => {
-      console.log('🟢 WebSocket Connected');
+export default function useWebSocket(roomId: string, onMessage: (message: any) => void) {
+  const clientRef = useRef<Client | null>(null);
 
-      stompClient.subscribe(`/topic/chatroom/${chatRoomId}`, (message) => {
-        onMessageReceived(JSON.parse(message.body));
-      });
-    },
-    onStompError: (frame) => {
-      console.error('STOMP Error', frame);
-    },
-  });
+  useEffect(() => {
+    const socket = new SockJS(WEBSOCKET_URL);
+    const client = new Client({
+      webSocketFactory: () => socket,
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log('🟢 WebSocket 연결됨');
 
-  stompClient.activate();
-};
-
-export const sendWebSocketMessage = (message: any) => {
-  if (stompClient && stompClient.connected) {
-    stompClient.publish({
-      destination: '/app/chat.sendMessage',
-      body: JSON.stringify(message),
+        client.subscribe(`/sub/chatroom/${roomId}`, (message) => {
+          const payload = JSON.parse(message.body);
+          console.log('📩 수신된 메시지:', payload);
+          onMessage(payload);
+        });
+      },
+      onStompError: (frame) => {
+        console.error('❌ STOMP 오류:', frame);
+      },
     });
-  } else {
-    console.warn('WebSocket 연결되지 않음');
-  }
-};
 
-export const disconnectWebSocket = () => {
-  if (stompClient && stompClient.active) {
-    stompClient.deactivate();
-    console.log('🔴 WebSocket Disconnected');
-  }
-};
+    client.activate();
+    clientRef.current = client;
 
-export const isConnected = () => {
-  return stompClient?.connected ?? false;
-};
+    return () => {
+      client.deactivate();
+    };
+  }, [roomId, onMessage]);
+
+  const sendMessage = (message: any) => {
+    if (clientRef.current && clientRef.current.connected) {
+      clientRef.current.publish({
+        destination: '/pub/send',
+        body: JSON.stringify(message),
+      });
+    }
+  };
+
+  return { sendMessage };
+}

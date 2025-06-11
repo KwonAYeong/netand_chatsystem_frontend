@@ -21,7 +21,7 @@ const UserContext = createContext<UserContextValue>({
 });
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>({ userId: 1 });
+  const [user, setUser] = useState<User | null>({ userId: 2 });
 
   const setUserById = (id: number) => {
     // userId 만 세팅 → 나머지 값은 이후 profile API 호출 시 채우면 됨

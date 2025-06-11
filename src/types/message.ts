@@ -1,12 +1,17 @@
 export interface Message {
   id: number;
+  chatRoomId: number;
   sender: {
     id: number;
     name: string;
-    profileImageUrl?: string; // ✅ 선택적 필드로 추가
+    profileImageUrl?: string;
   };
   content: string;
   time?: string;
   createdAt: string;
-  fileUrl?: string; // ✅ 추가됨
+  fileUrl?: string;
+  fileName?: string;
+
+  // ✅ 이 줄 추가해줘야 오류 해결됨
+  messageType: 'TEXT' | 'FILE';
 }

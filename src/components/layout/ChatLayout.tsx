@@ -44,7 +44,7 @@ const ChatLayout = () => {
           <ChatRoom
             chatRoomId={selectedRoom.id}
             userId={user.userId}
-            roomName={selectedRoom.name}
+            chatRoomName={selectedRoom.name} /* ✅ 여기만 수정 */
           />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-400">

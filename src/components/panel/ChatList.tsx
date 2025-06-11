@@ -40,9 +40,20 @@ export default function ChatList({ currentUserId, onSelectRoom }: Props) {
             <button
               key={room.chatRoomId}
               onClick={() => onSelectRoom(room.chatRoomId, room.chatRoomName)}
-              className="text-left w-full text-gray-800 hover:bg-gray-100 px-2 py-1 rounded"
+              className="relative flex items-center gap-2 w-full text-gray-800 hover:bg-gray-100 px-2 py-1 rounded"
             >
-              {room.chatRoomName}
+              <img
+                src={room.receiverProfileImage || '/default-profile.png'}
+                alt="profile"
+                className="w-6 h-6 rounded-full"
+              />
+              <span>{room.chatRoomName}</span>
+
+              {room.unreadMessageCount > 0 && (
+                <span className="absolute right-2 top-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                  {room.unreadMessageCount}
+                </span>
+              )}
             </button>
           ))
         ) : (
