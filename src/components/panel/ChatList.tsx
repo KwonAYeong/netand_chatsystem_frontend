@@ -4,6 +4,7 @@ import { getChatRoomsByUser } from '../../api/chat';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import InviteUser from './InviteUser';
+import UserAvatar from '../common/UserAvatar';
 
 interface Props {
   currentUserId: number;
@@ -23,7 +24,7 @@ interface ChatRoom {
 export default function ChatList({ currentUserId, onSelectRoom }: Props) {
   const [dmRooms, setDmRooms] = useState<ChatRoom[]>([]);
 
-  // ✅ 1. 채팅방 목록 불러오기 함수 분리
+  // ✅ 채팅방 목록 불러오기
   const fetchChatRooms = useCallback(() => {
     getChatRoomsByUser(currentUserId)
       .then((res) => {
@@ -35,12 +36,11 @@ export default function ChatList({ currentUserId, onSelectRoom }: Props) {
       });
   }, [currentUserId]);
 
-  // ✅ 2. mount 시 목록 불러오기
   useEffect(() => {
     fetchChatRooms();
   }, [fetchChatRooms]);
 
-  // ✅ WebSocket으로 unreadMessageCount 실시간 수신
+  // ✅ 실시간 unread 메시지 수신
   useEffect(() => {
     const socket = new SockJS('http://localhost:8080/ws');
     const client = new Client({
@@ -73,7 +73,7 @@ export default function ChatList({ currentUserId, onSelectRoom }: Props) {
     };
   }, [currentUserId]);
 
-  // ✅ 채팅방 클릭 시 뱃지 제거 + 채팅방 전환
+  // ✅ 채팅방 클릭
   const handleSelectRoom = (chatRoomId: number, chatRoomName: string) => {
     onSelectRoom(chatRoomId, chatRoomName);
 
@@ -97,10 +97,10 @@ export default function ChatList({ currentUserId, onSelectRoom }: Props) {
               onClick={() => handleSelectRoom(room.chatRoomId, room.chatRoomName)}
               className="relative flex items-center gap-2 w-full text-gray-800 hover:bg-gray-100 px-2 py-1 rounded"
             >
-              <img
+              <UserAvatar
                 src={room.receiverProfileImage || '/default-profile.png'}
-                alt="profile"
-                className="w-6 h-6 rounded-full"
+                alt={`${room.chatRoomName} 프로필`}
+                size="sm"
               />
               <span>{room.chatRoomName}</span>
 
@@ -116,7 +116,7 @@ export default function ChatList({ currentUserId, onSelectRoom }: Props) {
         )}
       </div>
 
-      {/* ✅ 초대 버튼 - 채팅방 생성 후 목록 다시 불러오도록 설정 */}
+      {/* ✅ 사용자 초대 */}
       <div className="mt-4">
         <InviteUser senderId={currentUserId} onCreated={fetchChatRooms} />
       </div>
