@@ -3,7 +3,11 @@ import { X } from 'lucide-react';
 import { useChatUI } from '../../hooks/useChatUI';
 import NotificationRadio from './NotificationRadio';
 import TimezoneSelector from './TimezoneSelector';
-import { getNotificationSettings, patchGlobalNotificationSettings } from '../../api/settings';
+import {
+  getNotificationSettings,
+  putGlobalNotificationLevel,
+  putNotificationTimeSettings,
+} from '../../api/settings';
 import { AlertType } from '../../types/notification';
 import { useUser } from '../../context/UserContext';
 import SettingsMenu from './SettingsMenu';
@@ -17,13 +21,14 @@ const SettingsModal = () => {
   const [endTime, setEndTime] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // GET → 한 번에 받기
   useEffect(() => {
-   
     if (!user?.userId) return;
 
     getNotificationSettings(user.userId)
       .then((data) => {
-         console.log('불러온 설정:', data); 
+        console.log('불러온 설정:', data);
+
         setNotificationLevel(data.alertType);
         setStartTime(data.startTime);
         setEndTime(data.endTime);
@@ -34,18 +39,25 @@ const SettingsModal = () => {
       });
   }, [user]);
 
-  // 자동 저장: 값이 바뀔 때마다 호출
+  // PUT → alertType만 따로 저장
   useEffect(() => {
     if (!user?.userId || notificationLevel === null || !isLoaded) return;
 
-    patchGlobalNotificationSettings(user.userId, {
-      alertType: notificationLevel,
-      notificationStartTime: startTime,
-      notificationEndTime: endTime,
-    }).catch((err) => {
-      console.error('❌ 설정 자동 저장 실패:', err);
-    });
-  }, [notificationLevel, startTime, endTime, user?.userId, isLoaded]);
+    putGlobalNotificationLevel(user.userId, notificationLevel)
+      .catch((err) => {
+        console.error('❌ 알림 레벨 저장 실패:', err);
+      });
+  }, [notificationLevel, user?.userId, isLoaded]);
+
+  // PUT → 시간만 따로 저장
+  useEffect(() => {
+    if (!user?.userId || !isLoaded) return;
+
+    putNotificationTimeSettings(user.userId, startTime, endTime)
+      .catch((err) => {
+        console.error('❌ 알림 시간 저장 실패:', err);
+      });
+  }, [startTime, endTime, user?.userId, isLoaded]);
 
   return (
     <div
