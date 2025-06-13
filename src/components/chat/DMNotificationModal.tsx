@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import NotificationRadio from '../settings/NotificationRadio';
 import { useUser } from '../../context/UserContext';
-import { getDMNotificationSettings, putDMNotificationLevel } from '../../api/settings'; 
+import { getDMNotificationSettings, putDMNotificationLevel } from '../../api/settings';
 import { AlertType } from '../../types/notification';
 
 interface Props {
-  chatRoomId: number; // DM용 chat_room_id
+  chatRoomId: number;
   onClose: () => void;
 }
 
@@ -28,14 +28,18 @@ const DMNotificationModal = ({ chatRoomId, onClose }: Props) => {
       });
   }, [user, chatRoomId]);
 
-  useEffect(() => {
-    if (!user?.userId || notificationLevel === null || !isLoaded) return;
+  // 저장 버튼 핸들러
+  const handleSave = async () => {
+    if (!user?.userId || notificationLevel === null) return;
 
-    putDMNotificationLevel(user.userId, chatRoomId, notificationLevel)
-      .catch((err) => {
-        console.error('❌ DM 알림 레벨 저장 실패:', err);
-      });
-  }, [notificationLevel, user, chatRoomId, isLoaded]);
+    try {
+      await putDMNotificationLevel(user.userId, chatRoomId, notificationLevel);
+      console.log('✅ DM 알림 설정 저장 완료');
+      onClose(); // 저장 후 모달 닫기
+    } catch (err) {
+      console.error('❌ DM 알림 레벨 저장 실패:', err);
+    }
+  };
 
   return (
     <div
@@ -56,10 +60,21 @@ const DMNotificationModal = ({ chatRoomId, onClose }: Props) => {
         <h2 className="text-lg font-bold mb-4">알림 설정</h2>
 
         {isLoaded ? (
-          <NotificationRadio
-            value={notificationLevel as AlertType}
-            onChange={setNotificationLevel}
-          />
+          <div className="space-y-6">
+            <NotificationRadio
+              value={notificationLevel as AlertType}
+              onChange={setNotificationLevel}
+            />
+            {/* 저장 버튼 */}
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+              >
+                저장
+              </button>
+            </div>
+          </div>
         ) : (
           <div className="text-sm text-gray-500">로딩 중...</div>
         )}
