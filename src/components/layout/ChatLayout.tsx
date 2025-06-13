@@ -65,7 +65,9 @@ const ChatLayout = () => {
 
       {/* 모달들 */}
       {showProfileModal && <ProfileEditModal />}
-      {showSettingsModal && <SettingsModal />}
+      {showSettingsModal && (
+        <SettingsModal key={user?.userId} />
+      )}
     </div>
   );
 };

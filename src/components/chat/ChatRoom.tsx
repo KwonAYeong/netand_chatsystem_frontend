@@ -111,7 +111,8 @@ export default function ChatRoom({
 
   return (
     <div className="flex flex-col h-full">
-      <Header chatRoomName={chatRoomName} />
+      <Header chatRoomName={chatRoomName} 
+      chatRoomId={chatRoomId}/>
       <div className="flex-1 overflow-y-auto px-4 py-2">
         <ProfileIntro name={chatRoomName} profileUrl="/default-profile.png" />
         <MessageList messages={messages} />

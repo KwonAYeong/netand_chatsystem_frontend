@@ -3,49 +3,69 @@ import { X } from 'lucide-react';
 import { useChatUI } from '../../hooks/useChatUI';
 import NotificationRadio from './NotificationRadio';
 import TimezoneSelector from './TimezoneSelector';
-import { getNotificationSettings, patchGlobalNotificationSettings } from '../../api/settings';
+import {
+  getNotificationSettings, 
+  putGlobalNotificationLevel,
+  putNotificationTimeSettings,
+} from '../../api/settings';
 import { AlertType } from '../../types/notification';
 import { useUser } from '../../context/UserContext';
 import SettingsMenu from './SettingsMenu';
+import { useNotificationSettings } from '../../context/NotificationSettingsContext';
 
 const SettingsModal = () => {
   const { setShowSettingsModal } = useChatUI();
   const { user } = useUser();
-  const [selectedMenu, setSelectedMenu] = useState('notification');
+  const { refreshSettings } = useNotificationSettings();
   const [notificationLevel, setNotificationLevel] = useState<AlertType | null>(null);
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [isLoaded, setIsLoaded] = useState(false);
-
+  const [notificationStartTime, setStartTime] = useState<string | undefined>(undefined);
+  const [notificationEndTime, setEndTime] = useState<string | undefined>(undefined);
+  const [selectedMenu, setSelectedMenu] = useState('notification'); // 빠져있던 selectedMenu 추가
+  const [loading, setLoading] = useState(true);
+  // Context 값 → local state에 sync
   useEffect(() => {
-   
-    if (!user?.userId) return;
+    const fetchSettings = async () => {
+      if (!user?.userId) return;
 
-    getNotificationSettings(user.userId)
-      .then((data) => {
-         console.log('불러온 설정:', data); 
-        setNotificationLevel(data.alertType);
-        setStartTime(data.startTime);
-        setEndTime(data.endTime);
-        setIsLoaded(true);
-      })
-      .catch((err) => {
+      try {
+        const settings = await getNotificationSettings(user.userId);
+        console.log('SettingsModal 초기 세팅:', settings);
+
+        setNotificationLevel(settings.alertType);
+        setStartTime(settings.notificationStartTime || undefined);
+        setEndTime(settings.notificationEndTime || undefined);
+      } catch (err) {
         console.error('❌ 알림 설정 로딩 실패:', err);
-      });
-  }, [user]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // 자동 저장: 값이 바뀔 때마다 호출
-  useEffect(() => {
-    if (!user?.userId || notificationLevel === null || !isLoaded) return;
+    fetchSettings();
+  }, [user?.userId]);
 
-    patchGlobalNotificationSettings(user.userId, {
-      alertType: notificationLevel,
-      notificationStartTime: startTime,
-      notificationEndTime: endTime,
-    }).catch((err) => {
-      console.error('❌ 설정 자동 저장 실패:', err);
-    });
-  }, [notificationLevel, startTime, endTime, user?.userId, isLoaded]);
+
+  const handleSave = async () => {
+    if (!user?.userId || notificationLevel === null) return;
+
+    try {
+      await putGlobalNotificationLevel(user.userId, notificationLevel); // 그대로 AlertType 전송
+      await putNotificationTimeSettings(
+        user.userId,
+        notificationStartTime && notificationStartTime.trim() !== '' ? notificationStartTime : undefined,
+        notificationEndTime && notificationEndTime.trim() !== '' ? notificationEndTime : undefined
+      );
+
+      console.log('✅ 알림 설정 저장 완료');
+
+      // 저장 후 Context 최신화 → 다른 화면에서도 최신으로 반영됨
+      await refreshSettings();
+
+      setShowSettingsModal(false);
+    } catch (err) {
+      console.error('❌ 알림 설정 저장 실패:', err);
+    }
+  };
 
   return (
     <div
@@ -53,7 +73,7 @@ const SettingsModal = () => {
       onClick={() => setShowSettingsModal(false)}
     >
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-xl min-w-[500px] min-h-[380px] p-6 relative"
+        className="bg-white rounded-xl shadow-xl w-full max-w-xl min-w-[500px] p-6 relative"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -64,22 +84,31 @@ const SettingsModal = () => {
         </button>
 
         <h2 className="text-lg font-bold mb-4">환경 설정</h2>
-        <div className="flex">
-          {/* 좌측 메뉴 */}
+        <div className="flex items-stretch">
           <SettingsMenu selected={selectedMenu} onSelect={setSelectedMenu} />
-
-          {/* 우측 내용 */}
-          <div className="flex-1 pl-6">
-            {selectedMenu === 'notification' && isLoaded && (
-              <div className="space-y-6">
-                <NotificationRadio value={notificationLevel as AlertType} onChange={setNotificationLevel} />
-                <TimezoneSelector
-                  start={startTime}
-                  end={endTime}
-                  onChangeStart={setStartTime}
-                  onChangeEnd={setEndTime}
-                />
-              </div>
+          <div className="flex-1 flex flex-col pl-6 min-h-[300px]">
+            {loading ? (
+              <div className="flex-1 flex items-center justify-center text-gray-500"></div>
+            ) : (
+              <>
+                <div className="flex-1 space-y-6">
+                  <NotificationRadio value={notificationLevel as AlertType} onChange={setNotificationLevel} />
+                  <TimezoneSelector
+                    start={notificationStartTime ?? ''}
+                    end={notificationEndTime ?? ''}
+                    onChangeStart={setStartTime}
+                    onChangeEnd={setEndTime}
+                  />
+                </div>
+                <div className="flex justify-end mt-3">
+                  <button
+                    onClick={handleSave}
+                    className="px-5 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-indigo-700 transition-colors"
+                  >
+                    저장
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>
