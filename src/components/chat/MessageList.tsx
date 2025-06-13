@@ -24,6 +24,7 @@ function isSameDate(a: string, b: string) {
 export default function MessageList({ messages }: Props) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
+  // ✅ 메시지가 바뀔 때마다 자동 스크롤
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -36,6 +37,14 @@ export default function MessageList({ messages }: Props) {
         const showDateHeader = !lastDate || !isSameDate(lastDate, msg.createdAt);
         lastDate = msg.createdAt;
 
+        const prev = messages[index - 1];
+
+        // ✅ 같은 사람 + 같은 시/분이면 아바타 생략
+        const showAvatar =
+          !prev ||
+          prev.sender.id !== msg.sender.id ||
+          prev.createdAt.slice(0, 16) !== msg.createdAt.slice(0, 16); // "yyyy-MM-ddTHH:mm"
+
         return (
           <React.Fragment key={msg.id}>
             {showDateHeader && (
@@ -45,10 +54,12 @@ export default function MessageList({ messages }: Props) {
                 </div>
               </div>
             )}
-            <MessageItem message={msg} showAvatar={true} />
+            <MessageItem message={msg} showAvatar={showAvatar} />
           </React.Fragment>
         );
       })}
+
+      {/* ✅ 스크롤 대상 */}
       <div ref={bottomRef} />
     </div>
   );

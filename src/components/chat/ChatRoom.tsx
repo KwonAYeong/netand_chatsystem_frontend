@@ -9,6 +9,7 @@ import {
 import Header from './Header';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
+import ProfileIntro from './ProfileIntro'; // ✅ 추가
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import { transform, appendIfNotExists } from '../../utils/transform';
@@ -49,7 +50,6 @@ export default function ChatRoom({ chatRoomId, userId, chatRoomName }: ChatRoomP
         setIsConnected(true);
 
         client.subscribe(`/sub/chatroom/${chatRoomId}`, (message) => {
-          console.log('📩 수신된 메시지:', message.body);
           const data = JSON.parse(message.body);
           const newMessage = transform(data);
           setMessages((prev) => appendIfNotExists(prev, newMessage));
@@ -102,6 +102,13 @@ export default function ChatRoom({ chatRoomId, userId, chatRoomName }: ChatRoomP
     <div className="flex flex-col h-full">
       <Header chatRoomName={chatRoomName} />
       <div className="flex-1 overflow-y-auto px-4 py-2">
+        {/* ✅ 상대방 프로필 소개 영역 */}
+        <ProfileIntro
+          name={chatRoomName}
+          profileUrl="/default-profile.png" // 필요 시 props로 받거나 API 연동 가능
+        />
+
+        {/* ✅ 메시지 리스트 */}
         <MessageList messages={messages} />
       </div>
       <MessageInput onSend={handleSend} />
