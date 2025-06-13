@@ -10,7 +10,11 @@ const convertToAmPm = (time: string | null | undefined): string => {
   return `${period} ${hour.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 };
 
-const parseAmPmTo24 = (time: string): string => {
+const parseAmPmTo24 = (time: string | undefined | null): string | undefined => {
+  if (!time || time.trim() === '') return undefined;  // 현재도 있는데
+
+  if (!time.includes(' ')) return undefined;  // 여기를 추가해줘야 함!!
+
   const [period, hm] = time.split(' ');
   const [h, m] = hm.split(':').map(Number);
   let hour = period === '오전' ? h : h % 12 + 12;
@@ -18,7 +22,16 @@ const parseAmPmTo24 = (time: string): string => {
   return `${hour.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00`;
 };
 
-// NotificationSettingsContext용 (백 응답 그대로 사용)
+// 변환 유틸
+export const convertMuteAllToAlertType = (muteAll: boolean): AlertType => {
+  return muteAll ? 'NONE' : 'ALL';
+};
+
+export const convertAlertTypeToMuteAll = (alertType: AlertType): boolean => {
+  return alertType === 'NONE';
+};
+
+// NotificationSettingsContext용 (백 응답 그대로 사용 → muteAll boolean 유지)
 export const getNotificationSettingsForContext = async (userId: number): Promise<NotificationSettings> => {
   const res = await api.get(`/notification-setting/${userId}`);
   console.log('📢 알림 설정 GET 응답 (for context):', res.data);
@@ -26,7 +39,7 @@ export const getNotificationSettingsForContext = async (userId: number): Promise
   return res.data as NotificationSettings;
 };
 
-// SettingsModal (UI용 → alertType 등 포함 변환해서 사용)
+// SettingsModal용 → muteAll → alertType 변환해서 반환 (화면에서 편하게 사용하기 위함)
 export const getNotificationSettings = async (userId: number) => {
   const res = await api.get(`/notification-setting/${userId}`);
   console.log('📢 알림 설정 GET 응답:', res.data);
@@ -36,20 +49,20 @@ export const getNotificationSettings = async (userId: number) => {
     return timeString.substring(0, 5);
   };
 
-  const alertType: AlertType = res.data.isMuteAll ? 'NONE' : 'ALL';
+  const alertType: AlertType = convertMuteAllToAlertType(res.data.muteAll);
 
   return {
-    alertType,
+    alertType,  // 여기서 alertType 으로 반환 (UI 전용)
     notificationStartTime: convertToAmPm(toHHMM(res.data.notificationStartTime)),
     notificationEndTime: convertToAmPm(toHHMM(res.data.notificationEndTime)),
   };
 };
 
-// Global Notification Level 설정 (Context에서 바로 반영 가능)
+// Global Notification Level 설정 → 서버에 muteAll(boolean) 으로 전송
 export const putGlobalNotificationLevel = async (userId: number, alertType: AlertType): Promise<NotificationSettings> => {
   const payload = {
     userId,
-    alertType,
+    alertType,  // ✅ 이렇게 고쳐야 네가 원하는 "서버에 alertType 주기" 상태랑 정확히 일치함
   };
 
   console.log('📢 PUT 알림 레벨 설정 요청:', payload);
@@ -60,17 +73,17 @@ export const putGlobalNotificationLevel = async (userId: number, alertType: Aler
   return res.data as NotificationSettings;
 };
 
-// Notification Time 설정 (Context에서 바로 반영 가능)
+// Notification Time 설정
 export const putNotificationTimeSettings = async (
   userId: number,
   notificationStartTime?: string,
   notificationEndTime?: string
 ): Promise<NotificationSettings> => {
   const payload = {
-    userId,
-    notificationStartTime: parseAmPmTo24(notificationStartTime ?? '08:30'),
-    notificationEndTime: parseAmPmTo24(notificationEndTime ?? '20:30'),
-  };
+  userId,
+  notificationStartTime: notificationStartTime ? parseAmPmTo24(notificationStartTime) : undefined,
+  notificationEndTime: notificationEndTime ? parseAmPmTo24(notificationEndTime) : undefined,
+};
 
   console.log('📢 PUT 알림 시간 설정 요청:', payload);
 
@@ -80,30 +93,34 @@ export const putNotificationTimeSettings = async (
   return res.data as NotificationSettings;
 };
 
-// DM Notification Level 설정 (이건 따로 응답 없음 → void 처리)
+// DM Notification Level 설정
 export const putDMNotificationLevel = async (
   userId: number,
   chatRoomId: number,
   alertType: AlertType
 ) => {
-  await api.put('/api/settings/notifications/dm', {
+  const payload = {
     user_id: userId,
     chat_room_id: chatRoomId,
-    alert_type: alertType,
-  });
+    alert_type: alertType,  // alertType 그대로 보내는게 맞음
+  };
+
+  console.log('📢 PUT DM 알림 설정 요청:', payload);
+
+  await api.put('/api/settings/notifications/dm', payload);
 };
 
-// DM Notification Settings (지금 dummy 사용중 → 실제 연동 시 수정 예정)
+// DM Notification Settings (지금 dummy 사용중)
 const dummyNotificationSetting: {
   userId: number;
   chatRoomId: number;
-  alertType: AlertType;
+  muteAll: AlertType;
   notificationStartTime: string | null;
   notificationEndTime: string | null;
 } = {
   userId: 1,
   chatRoomId: 1,
-  alertType: 'ALL',
+  muteAll: 'ALL',
   notificationStartTime: null,
   notificationEndTime: null,
 };

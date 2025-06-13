@@ -23,7 +23,7 @@ export default function Header({ chatRoomName, profileUrl, chatRoomId }: HeaderP
             size="sm"
           />
         </div>
-
+        <span className="font-bold">{chatRoomName}</span>
         <SettingsIcon
           className="text-xl cursor-pointer"
           onClick={() => { setShowDMNotificationModal(true); }}

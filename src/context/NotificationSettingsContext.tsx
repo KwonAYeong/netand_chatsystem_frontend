@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useState } from 'react';
 import { getNotificationSettingsForContext } from '../api/settings';
 import { NotificationSettings } from '../types/notification';
 
@@ -22,11 +22,7 @@ export const NotificationSettingsProvider = ({ userId, children }: { userId: num
     }
   }, [userId]);
 
-  useEffect(() => {
-    refreshSettings();
-
-  }, [userId, refreshSettings]);
-
+ 
   return (
     <NotificationSettingsContext.Provider value={{ notificationSettings, refreshSettings }}>
       {children}

@@ -1,29 +1,62 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNotificationSettings } from '../context/NotificationSettingsContext';
 import { shouldShowNotification } from '../utils/shouldShowNotification';
 import { useChatUI } from '../context/ChatUIContext';
+
 export const useSSEWithNotification = (
   userId: number,
   windowIsFocused: boolean,
-  navigate: (path: string) => void  // navigate 함수 인자로 받음
+  navigate: (path: string) => void
 ) => {
   const { notificationSettings, refreshSettings } = useNotificationSettings();
   const { currentChatRoomId } = useChatUI();
 
+  const refreshSettingsRef = useRef(refreshSettings);
+  const currentChatRoomIdRef = useRef(currentChatRoomId);
+  const notificationSettingsRef = useRef(notificationSettings);
+  const windowIsFocusedRef = useRef(windowIsFocused);
+
+  // ⭐ 여기에 추가 → 현재 열려있는 EventSource 보관
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    refreshSettingsRef.current = refreshSettings;
+  }, [refreshSettings]);
+
+  useEffect(() => {
+    currentChatRoomIdRef.current = currentChatRoomId;
+  }, [currentChatRoomId]);
+
+  useEffect(() => {
+    notificationSettingsRef.current = notificationSettings;
+  }, [notificationSettings]);
+
+  useEffect(() => {
+    windowIsFocusedRef.current = windowIsFocused;
+  }, [windowIsFocused]);
+
   useEffect(() => {
     if (!userId) return;
 
-    // Notification 권한 확인 + 요청
+    console.log('🚀 useSSEWithNotification - EventSource 연결 시작됨 userId:', userId);
+
     if (Notification.permission === 'default') {
       Notification.requestPermission().then(permission => {
         console.log('🔔 Notification permission:', permission);
       });
     }
 
-    // SSE 연결
-    const eventSource = new EventSource(`http://localhost:8080/api/notification/subscribe?userId=${userId}`);
+    // ⭐ 기존 EventSource 있으면 먼저 닫기
+    if (eventSourceRef.current) {
+      console.log('⚠️ 기존 EventSource 닫기');
+      eventSourceRef.current.close();
+    }
 
-    // onmessage (기본 이벤트 → 지금은 사용 X)
+    const eventSource = new EventSource(`http://localhost:8080/api/notification/subscribe?userId=${userId}`);
+    eventSourceRef.current = eventSource;
+
+    console.log('📢 SSE 연결 시작');
+
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -33,32 +66,30 @@ export const useSSEWithNotification = (
       }
     };
 
-    // ⭐ 공통 알림 표시 함수 (중복 제거용)
-   const showNotification = (data: any) => {
-    const notification = new Notification(`${data.senderName}님이 보낸 메시지`, {
-      body: data.message,
-      icon: data.senderProfileImage || '/notification-icon.png',
-    });
+    const showNotification = (data: any) => {
+      const notification = new Notification(`${data.senderName}님이 보낸 메시지`, {
+        body: data.message,
+        icon: data.senderProfileImage || '/notification-icon.png',
+      });
 
-    notification.onclick = (event) => {
-      event.preventDefault();
-      window.focus();
-       console.log('알림 클릭 - 채팅방 이동 시도:', data.chatRoomId);
-      navigate(`/chat?chatRoomId=${data.chatRoomId}`);  // navigate 함수 사용
+      notification.onclick = (event) => {
+        event.preventDefault();
+        window.focus();
+        console.log('알림 클릭 - 채팅방 이동 시도:', data.chatRoomId);
+        navigate(`/chat?chatRoomId=${data.chatRoomId}`);
+      };
     };
-  };
 
-    // 공통 알림 표시 처리 함수
     const handleNotification = (data: any) => {
-      console.log('현재 currentChatRoomId:', currentChatRoomId, 'chatRoomId:', data.chatRoomId);
+      console.log('현재 currentChatRoomId:', currentChatRoomIdRef.current, 'chatRoomId:', data.chatRoomId);
 
-      if (shouldShowNotification(notificationSettings, data, userId)) {
+      if (shouldShowNotification(notificationSettingsRef.current, data, userId)) {
         console.log('✅ 알림 표시 조건 통과');
 
-        const isCurrentRoom = currentChatRoomId === data.chatRoomId;
+        const isCurrentRoom = currentChatRoomIdRef.current === data.chatRoomId;
         const isWindowHidden = document.visibilityState === 'hidden';
 
-        if (!isCurrentRoom || isWindowHidden || !windowIsFocused) {
+        if (!isCurrentRoom || isWindowHidden || !windowIsFocusedRef.current) {
           console.log('✅ 알림 표시 → 조건 만족');
 
           if (Notification.permission === 'granted') {
@@ -80,7 +111,6 @@ export const useSSEWithNotification = (
       }
     };
 
-    // "sse" 이벤트
     eventSource.addEventListener('sse', (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -88,7 +118,7 @@ export const useSSEWithNotification = (
 
         if (data.type === 'NOTIFICATION_SETTINGS_UPDATED') {
           console.log('🔄 알림 설정 변경 감지 → refreshSettings 호출');
-          refreshSettings();
+          refreshSettingsRef.current();  // ref 통해 호출
         } else {
           handleNotification(data);
         }
@@ -97,7 +127,6 @@ export const useSSEWithNotification = (
       }
     });
 
-    // "chat" 이벤트
     eventSource.addEventListener('chat', (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -109,13 +138,14 @@ export const useSSEWithNotification = (
       }
     });
 
-    // SSE 오류 처리
     eventSource.onerror = (error) => {
       console.error('❌ SSE 오류:', error);
     };
 
     return () => {
+      console.log('📢 SSE 연결 해제');
       eventSource.close();
+      eventSourceRef.current = null;  // ⭐ 꼭 null로 리셋
     };
-  }, [userId, notificationSettings, currentChatRoomId, refreshSettings, windowIsFocused, navigate]);
+  }, [userId, navigate]);
 };

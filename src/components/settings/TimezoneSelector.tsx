@@ -1,6 +1,6 @@
 interface Props {
-  start: string;
-  end: string;
+  start: string | undefined;
+  end: string | undefined;
   onChangeStart: (value: string) => void;
   onChangeEnd: (value: string) => void;
 }

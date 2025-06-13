@@ -9,7 +9,7 @@ export function shouldShowNotification(
   if (!settings) return false;
 
   // 글로벌 Mute All
-  if (settings.isMuteAll) return false;
+  if (settings.muteAll) return false;
 
   // 시간 체크
   const now = new Date();

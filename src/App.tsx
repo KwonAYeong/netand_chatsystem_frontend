@@ -9,7 +9,7 @@ import {
 
 import Chat from './pages/chat';
 import { UserProvider, useUser } from './context/UserContext';
-import { NotificationSettingsProvider } from './context/NotificationSettingsContext';
+import { NotificationSettingsProvider, useNotificationSettings } from './context/NotificationSettingsContext';
 import { useSSEWithNotification } from './hooks/useSSEWithNotification';
 import { ChatUIProvider } from './context/ChatUIContext';
 
@@ -23,6 +23,7 @@ const App = () => {
   );
 };
 
+// 🚩 이게 반드시 있어야 함!
 const NotificationSettingsProviderWrapper = () => {
   const { user } = useUser();
 
@@ -31,17 +32,18 @@ const NotificationSettingsProviderWrapper = () => {
   }
 
   return (
-    <ChatUIProvider>
-      <NotificationSettingsProvider userId={user.userId}>
+    <NotificationSettingsProvider userId={user.userId}>
+      <ChatUIProvider>
         <AppContent />
-      </NotificationSettingsProvider>
-    </ChatUIProvider>
+      </ChatUIProvider>
+    </NotificationSettingsProvider>
   );
 };
 
 const AppContent = () => {
   const { user } = useUser();
   const navigate = useNavigate();
+  const { refreshSettings } = useNotificationSettings();
 
   const [windowIsFocused, setWindowIsFocused] = useState(true);
 
@@ -57,6 +59,15 @@ const AppContent = () => {
       window.removeEventListener('blur', handleBlur);
     };
   }, []);
+
+  useEffect(() => {
+    if (user?.userId) {
+      refreshSettings();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.userId]);
+
+  console.log('🔥 AppContent 렌더링 userId:', user?.userId);
 
   useSSEWithNotification(user?.userId ?? 0, windowIsFocused, navigate);
 

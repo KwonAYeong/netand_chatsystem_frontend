@@ -20,7 +20,7 @@ const DMNotificationModal = ({ chatRoomId, onClose }: Props) => {
 
     getDMNotificationSettings(user.userId, chatRoomId)
       .then((data) => {
-        setNotificationLevel(data.alertType);
+        setNotificationLevel(data.muteAll);
         setIsLoaded(true);
       })
       .catch((err) => {
