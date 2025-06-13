@@ -1,60 +1,47 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 
-export default function MessageInput({ onSend }: { onSend: (msg: string, file?: File) => void }) {
-  const [input, setInput] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+interface MessageInputProps {
+  onSend: (text: string, file?: File) => void;
+}
 
-  const handleSend = () => {
-    if (input.trim() === '' && !selectedFile) return;
+export default function MessageInput({ onSend }: MessageInputProps) {
+  const [text, setText] = useState('');
+  const [isComposing, setIsComposing] = useState(false); // 👈 조합 중인지 확인
 
-    onSend(input, selectedFile ?? undefined);
-    setInput('');
-    setSelectedFile(null);
-  };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = text.trim();
+    if (!trimmed) return;
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-    }
+    onSend(trimmed);
+    setText('');
   };
 
   return (
-    <div className="flex items-center px-4 py-2 bg-white border-t gap-2">
-      {/* + 버튼 (파일 선택) */}
-      <button
-        className="text-xl font-bold text-gray-500 hover:text-black"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        +
-      </button>
-      <input
-        type="file"
-        className="hidden"
-        ref={fileInputRef}
-        onChange={handleFileSelect}
-      />
-
-      {/* 선택한 파일 이름 보여주기 */}
-      {selectedFile && (
-        <span className="text-sm text-gray-600 truncate max-w-[150px]">{selectedFile.name}</span>
-      )}
-
-      {/* 메시지 입력창 */}
+    <form
+      onSubmit={handleSubmit}
+      className="flex items-center border-t p-2"
+    >
       <input
         type="text"
-        placeholder="메시지 보내기"
-        className="flex-1 px-4 py-2 border rounded-full bg-gray-100"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-      />
+        className="flex-1 border rounded-full px-4 py-2"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onCompositionStart={() => setIsComposing(true)}   
+        onCompositionEnd={() => setIsComposing(false)}    
 
-      {/* 전송 버튼 */}
-      <button onClick={handleSend} className="px-4 py-1 bg-black text-white rounded-full">
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            if (isComposing) return;
+            e.preventDefault();
+            handleSubmit(e as any);
+          }
+        }}
+        placeholder="메시지 보내기"
+      />
+      <button type="submit" className="ml-2 px-4 py-2 rounded bg-blue-500 text-white">
         전송
       </button>
-    </div>
+    </form>
   );
 }
