@@ -1,14 +1,17 @@
-// src/components/chat/ChatRoom.tsx
-import React, { useEffect, useRef, useState } from 'react';
-import Header from './Header';
-import MessageList from './MessageList';
-import MessageInput from './MessageInput';
-import ProfileIntro from './ProfileIntro';
-import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
-import { getMessages, updateLastReadMessage } from '../../api/chat';
-import { transform, appendIfNotExists } from '../../utils/transform';
-import type { Message } from '../../types/message';
+import React, { useEffect, useRef, useState } from "react";
+import {
+  sendFileMessage,
+  getMessages,
+  updateLastReadMessage,
+} from "../../api/chat";
+import Header from "./Header";
+import MessageList from "./MessageList";
+import MessageInput from "./MessageInput";
+import ProfileIntro from "./ProfileIntro";
+import SockJS from "sockjs-client";
+import { Client } from "@stomp/stompjs";
+import { transform, appendIfNotExistsById } from "../../utils/transform";
+import type { Message } from "../../types/message";
 
 interface ChatRoomProps {
   chatRoomId: number;
@@ -16,42 +19,46 @@ interface ChatRoomProps {
   chatRoomName: string;
 }
 
-export default function ChatRoom({ chatRoomId, userId, chatRoomName }: ChatRoomProps) {
+export default function ChatRoom({
+  chatRoomId,
+  userId,
+  chatRoomName,
+}: ChatRoomProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const clientRef = useRef<Client | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // 1. 이전 메시지 불러오기
+    // 메시지 로딩
     getMessages(chatRoomId)
       .then((res) => {
         const transformed = res.data.map(transform);
-        setMessages(transformed);
+        setMessages((prev) => appendIfNotExistsById(prev, ...transformed));
       })
-      .catch((err) => console.error('❌ 메시지 불러오기 실패:', err));
+      .catch((err) => console.error("❌ 메시지 불러오기 실패:", err));
 
-    // 2. 채팅방 입장 시 읽음 처리
+    // 읽음 처리
     updateLastReadMessage(chatRoomId, userId)
-      .then(() => console.log('✅ 읽음 처리 완료'))
-      .catch((err) => console.error('❌ 읽음 처리 실패:', err));
+      .then(() => console.log("✅ 읽음 처리 완료"))
+      .catch((err) => console.error("❌ 읽음 처리 실패:", err));
 
-    // 3. WebSocket 연결
-    const socket = new SockJS('http://localhost:8080/ws');
+    // WebSocket 연결
+    const socket = new SockJS("http://localhost:8080/ws");
     const client = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log('🟢 WebSocket 연결됨');
+        console.log("🟢 WebSocket 연결됨");
         setIsConnected(true);
 
         client.subscribe(`/sub/chatroom/${chatRoomId}`, (message) => {
           const data = JSON.parse(message.body);
           const newMessage = transform(data);
-          setMessages((prev) => appendIfNotExists(prev, newMessage));
+          setMessages((prev) => appendIfNotExistsById(prev, newMessage));
         });
       },
       onStompError: (frame) => {
-        console.error('❌ STOMP 오류:', frame);
+        console.error("❌ STOMP 오류:", frame);
       },
     });
 
@@ -61,37 +68,44 @@ export default function ChatRoom({ chatRoomId, userId, chatRoomName }: ChatRoomP
     return () => {
       client.deactivate();
       setIsConnected(false);
+      setMessages([]);
     };
   }, [chatRoomId]);
 
-  const handleSend = (text: string, file?: File) => {
-    if (!clientRef.current || !clientRef.current.connected) {
-      console.warn('⚠️ WebSocket 연결되지 않아 메시지를 보낼 수 없습니다.');
-      return;
-    }
+  // 파일 업로드 → fileUrl만 받아오기
+  const uploadFile = async (file: File): Promise<string> => {
+    const res = await sendFileMessage(chatRoomId, userId, file);
+    return res.data.fileUrl;
+  };
 
-    const payload: any = {
-      chatRoomId,
-      senderId: userId,
-      messageType: file ? 'FILE' : 'TEXT',
-    };
+  const handleSend = async (text: string, file?: File) => {
+    try {
+      let fileUrl: string | undefined;
 
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        payload.fileUrl = reader.result;
-        clientRef.current!.publish({
-          destination: '/pub/chat.sendMessage',
+      if (file) {
+        // 파일만 업로드하고 fileUrl만 받음
+        const res = await sendFileMessage(chatRoomId, userId, file);
+        fileUrl = res.data.fileUrl; 
+      }
+
+      const payload = {
+        chatRoomId,
+        senderId: userId,
+        content: text,
+        messageType: file ? "FILE" : "TEXT",
+        fileUrl,
+      };
+
+      if (clientRef.current && clientRef.current.connected) {
+        clientRef.current.publish({
+          destination: "/pub/chat.sendMessage",
           body: JSON.stringify(payload),
         });
-      };
-      reader.readAsDataURL(file);
-    } else {
-      payload.content = text;
-      clientRef.current.publish({
-        destination: '/pub/chat.sendMessage',
-        body: JSON.stringify(payload),
-      });
+      } else {
+        console.warn("⚠️ WebSocket 연결 안됨");
+      }
+    } catch (err) {
+      console.error("❌ 메시지 전송 실패:", err);
     }
   };
 
