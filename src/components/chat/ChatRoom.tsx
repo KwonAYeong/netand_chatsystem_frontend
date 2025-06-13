@@ -1,16 +1,12 @@
 // src/components/chat/ChatRoom.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  getMessages,
-  sendMessage,
-  sendFileMessage,
-  updateLastReadMessage,
-} from '../../api/chat';
 import Header from './Header';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
+import ProfileIntro from './ProfileIntro';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
+import { getMessages, updateLastReadMessage } from '../../api/chat';
 import { transform, appendIfNotExists } from '../../utils/transform';
 import type { Message } from '../../types/message';
 
@@ -26,7 +22,7 @@ export default function ChatRoom({ chatRoomId, userId, chatRoomName }: ChatRoomP
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // 1. 메시지 불러오기
+    // 1. 이전 메시지 불러오기
     getMessages(chatRoomId)
       .then((res) => {
         const transformed = res.data.map(transform);
@@ -49,7 +45,6 @@ export default function ChatRoom({ chatRoomId, userId, chatRoomName }: ChatRoomP
         setIsConnected(true);
 
         client.subscribe(`/sub/chatroom/${chatRoomId}`, (message) => {
-          console.log('📩 수신된 메시지:', message.body);
           const data = JSON.parse(message.body);
           const newMessage = transform(data);
           setMessages((prev) => appendIfNotExists(prev, newMessage));
@@ -69,32 +64,34 @@ export default function ChatRoom({ chatRoomId, userId, chatRoomName }: ChatRoomP
     };
   }, [chatRoomId]);
 
-  const handleSend = async (text: string, file?: File) => {
-    try {
-      let res;
+  const handleSend = (text: string, file?: File) => {
+    if (!clientRef.current || !clientRef.current.connected) {
+      console.warn('⚠️ WebSocket 연결되지 않아 메시지를 보낼 수 없습니다.');
+      return;
+    }
 
-      if (file) {
-        res = await sendFileMessage(chatRoomId, userId, file);
-      } else {
-        const messagePayload = {
-          chatRoomId,
-          senderId: userId,
-          content: text,
-          messageType: 'TEXT',
-        };
-        res = await sendMessage(messagePayload);
-      }
+    const payload: any = {
+      chatRoomId,
+      senderId: userId,
+      messageType: file ? 'FILE' : 'TEXT',
+    };
 
-      if (clientRef.current && clientRef.current.connected) {
-        clientRef.current.publish({
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        payload.fileUrl = reader.result;
+        clientRef.current!.publish({
           destination: '/pub/chat.sendMessage',
-          body: JSON.stringify(res.data),
+          body: JSON.stringify(payload),
         });
-      } else {
-        console.warn('⚠️ WebSocket 연결되지 않아 메시지를 보낼 수 없습니다.');
-      }
-    } catch (err) {
-      console.error('❌ 메시지 전송 실패:', err);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      payload.content = text;
+      clientRef.current.publish({
+        destination: '/pub/chat.sendMessage',
+        body: JSON.stringify(payload),
+      });
     }
   };
 
@@ -103,6 +100,7 @@ export default function ChatRoom({ chatRoomId, userId, chatRoomName }: ChatRoomP
       <Header chatRoomName={chatRoomName} 
       chatRoomId={chatRoomId}/>
       <div className="flex-1 overflow-y-auto px-4 py-2">
+        <ProfileIntro name={chatRoomName} profileUrl="/default-profile.png" />
         <MessageList messages={messages} />
       </div>
       <MessageInput onSend={handleSend} />

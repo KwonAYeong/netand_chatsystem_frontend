@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { useUser } from '../../context/UserContext';
 import type { Message } from '../../types/message';
-import { Smile, Bookmark } from 'lucide-react'; // 아이콘
+import { Smile, Bookmark } from 'lucide-react';
+import UserAvatar from '../common/UserAvatar';
 
 interface Props {
   message: Message;
@@ -16,6 +17,10 @@ function isUrl(text: string): boolean {
   } catch {
     return false;
   }
+}
+
+function isImageFile(url: string): boolean {
+  return /\.(jpg|jpeg|png|gif)$/i.test(url);
 }
 
 function formatTime(timestamp: string) {
@@ -43,21 +48,21 @@ export default function MessageItem({ message, showAvatar }: Props) {
     >
       {/* 프로필 이미지 */}
       {showAvatar ? (
-        <img
+        <UserAvatar
           src={
             isMine
               ? user?.profileImageUrl || '/default-profile.png'
               : message.sender.profileImageUrl || '/default-profile.png'
           }
-          alt="profile"
-          className="w-8 h-8 rounded-full mt-1"
+          alt={`${message.sender.name} 프로필`}
+          size="sm"
         />
       ) : (
-        <div className="w-8" />
+        <div className="w-6" />
       )}
 
       <div className="flex flex-col">
-        {/* 유저 이름 + 시간 */}
+        {/* 이름 + 시간 */}
         {showAvatar && (
           <div className="flex items-center gap-1 mb-1 text-xs text-gray-500">
             <span>{message.sender.name}</span>
@@ -85,18 +90,27 @@ export default function MessageItem({ message, showAvatar }: Props) {
 
         {/* 파일 메시지 */}
         {message.messageType === 'FILE' && fileLink && (
-          <a
-            href={fileLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-600 underline break-all max-w-[300px]"
-          >
-            📎 {fileName}
-          </a>
+          <div className="mt-2 max-w-[300px] space-y-1">
+            <a
+              href={fileLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-600 underline break-all"
+            >
+              📎 {fileName}
+            </a>
+            {isImageFile(fileLink) && (
+              <img
+                src={fileLink}
+                alt="첨부 이미지"
+                className="rounded shadow max-w-full max-h-[200px]"
+              />
+            )}
+          </div>
         )}
       </div>
 
-      {/* 반응 / 북마크 버튼 - hover 시에만 보임 */}
+      {/* 반응 버튼 */}
       {hovered && (
         <div className="absolute right-4 top-2 flex gap-2 text-gray-400">
           <button>

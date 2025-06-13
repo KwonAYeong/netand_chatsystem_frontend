@@ -1,6 +1,7 @@
 // src/components/chat/Header.tsx
 import React, { useState } from 'react';
 import { SettingsIcon } from "../../icons";
+import UserAvatar from '../common/UserAvatar';
 import DMNotificationModal from './DMNotificationModal';
 
 interface HeaderProps {
@@ -16,16 +17,16 @@ export default function Header({ chatRoomName, profileUrl, chatRoomId }: HeaderP
     <>
       <div className="flex items-center justify-between px-4 py-2 bg-white shadow-sm">
         <div className="flex items-center space-x-2">
-          <img
+          <UserAvatar
             src={profileUrl || '/default-profile.png'}
-            alt="profile"
-            className="w-8 h-8 rounded-full"
+            alt={`${chatRoomName} 프로필`}
+            size="sm"
           />
-          <span className="font-bold">{chatRoomName}</span>
         </div>
+
         <SettingsIcon
           className="text-xl cursor-pointer"
-          onClick={() => {setShowDMNotificationModal(true);}}
+          onClick={() => { setShowDMNotificationModal(true); }}
         />
       </div>
 

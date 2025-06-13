@@ -51,7 +51,7 @@ const ChatLayout = () => {
         ) : (
           // ✅ WelcomeScreen으로 변경
           <WelcomeScreen
-            userName={user.name|| '사용자자'}
+            userName={user.name|| '사용자'}
             profileImage={user.profileImageUrl || '/default-profile.png'}
           />
         )}

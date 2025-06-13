@@ -1,5 +1,6 @@
 // src/components/common/WelcomeScreen.tsx
 import React from 'react';
+import UserAvatar from './UserAvatar';
 
 interface WelcomeScreenProps {
   userName: string;
@@ -16,10 +17,10 @@ const WelcomeScreen = ({ userName, profileImage }: WelcomeScreenProps) => {
       </div>
 
       <div className="flex items-center gap-2 mb-2 text-xl font-semibold text-black">
-        <img
+        <UserAvatar
           src={profileImage || '/default-profile.png'}
-          alt="프로필"
-          className="w-10 h-10 rounded-full"
+          alt={`${userName} 프로필`}
+          size="md"
         />
         <span>{userName}님 오신 걸 환영합니다</span>
       </div>
