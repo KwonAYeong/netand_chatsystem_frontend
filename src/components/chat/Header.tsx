@@ -5,7 +5,7 @@ import UserAvatar from '../common/UserAvatar';
 import DMNotificationModal from './DMNotificationModal';
 
 interface HeaderProps {
-  chatRoomName: string;
+  chatRoomName?: string;
   profileUrl?: string;
   chatRoomId?: number;
 }
@@ -22,8 +22,8 @@ export default function Header({ chatRoomName, profileUrl, chatRoomId }: HeaderP
             alt={`${chatRoomName} 프로필`}
             size="sm"
           />
+          <span className="font-bold">{chatRoomName}</span>
         </div>
-        <span className="font-bold">{chatRoomName}</span>
         <SettingsIcon
           className="text-xl cursor-pointer"
           onClick={() => { setShowDMNotificationModal(true); }}

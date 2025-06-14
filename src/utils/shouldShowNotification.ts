@@ -1,4 +1,3 @@
-// src/utils/shouldShowNotification.ts
 import type { NotificationSettings } from "../types/notification";
 
 export function shouldShowNotification(
@@ -18,7 +17,14 @@ export function shouldShowNotification(
   const startMinutes = timeToMinutes(settings.notificationStartTime);
   const endMinutes = timeToMinutes(settings.notificationEndTime);
 
-  if (nowMinutes < startMinutes || nowMinutes > endMinutes) return false;
+  // ✅ 날짜 걸치는 경우도 정상 처리
+  if (startMinutes <= endMinutes) {
+    // 같은 날 범위
+    if (nowMinutes < startMinutes || nowMinutes >= endMinutes) return false;
+  } else {
+    // 날짜 걸치는 범위
+    if (nowMinutes < startMinutes && nowMinutes >= endMinutes) return false;
+  }
 
   // 채팅방 mute
   if (settings.mutedChatRoomIds.includes(data.chatRoomId)) return false;

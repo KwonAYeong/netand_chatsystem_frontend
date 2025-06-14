@@ -4,6 +4,19 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 interface ChatUIContextType {
   currentChatRoomId: number | null;
   setCurrentChatRoomId: React.Dispatch<React.SetStateAction<number | null>>;
+
+  selectedRoom: {
+    id: number;
+    name: string;
+    profileImage: string;
+  } | null;
+  setSelectedRoom: React.Dispatch<
+    React.SetStateAction<{
+      id: number;
+      name: string;
+      profileImage: string;
+    } | null>
+  >;
 }
 
 // 2️⃣ 초기값 null → 타입 명시적으로 설정
@@ -13,8 +26,21 @@ const ChatUIContext = createContext<ChatUIContextType | undefined>(undefined);
 export const ChatUIProvider = ({ children }: { children: ReactNode }) => {
   const [currentChatRoomId, setCurrentChatRoomId] = useState<number | null>(null);
 
+  const [selectedRoom, setSelectedRoom] = useState<{
+    id: number;
+    name: string;
+    profileImage: string;
+  } | null>(null);
+
   return (
-    <ChatUIContext.Provider value={{ currentChatRoomId, setCurrentChatRoomId }}>
+    <ChatUIContext.Provider
+      value={{
+        currentChatRoomId,
+        setCurrentChatRoomId,
+        selectedRoom,
+        setSelectedRoom,
+      }}
+    >
       {children}
     </ChatUIContext.Provider>
   );
