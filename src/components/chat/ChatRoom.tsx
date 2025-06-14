@@ -17,12 +17,14 @@ interface ChatRoomProps {
   chatRoomId: number;
   userId: number;
   chatRoomName: string;
+  chatRoomProfileImage: string;
 }
 
 export default function ChatRoom({
   chatRoomId,
   userId,
   chatRoomName,
+  chatRoomProfileImage,
 }: ChatRoomProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const clientRef = useRef<Client | null>(null);
@@ -35,12 +37,12 @@ export default function ChatRoom({
         const transformed = res.data.map(transform);
         setMessages((prev) => appendIfNotExistsById(prev, ...transformed));
       })
-      .catch((err) => console.error("❌ 메시지 불러오기 실패:", err));
+      .catch((err) => console.error('❌ 메시지 불러오기 실패:', err));
 
     // 읽음 처리
     updateLastReadMessage(chatRoomId, userId)
-      .then(() => console.log("✅ 읽음 처리 완료"))
-      .catch((err) => console.error("❌ 읽음 처리 실패:", err));
+      .then(() => console.log('✅ 읽음 처리 완료'))
+      .catch((err) => console.error('❌ 읽음 처리 실패:', err));
 
     // WebSocket 연결
     const socket = new SockJS("http://localhost:8080/ws");
@@ -111,10 +113,9 @@ export default function ChatRoom({
 
   return (
     <div className="flex flex-col h-full">
-      <Header chatRoomName={chatRoomName} 
-      chatRoomId={chatRoomId}/>
+      <Header chatRoomName={chatRoomName} chatRoomId={chatRoomId} profileUrl={chatRoomProfileImage} />
       <div className="flex-1 overflow-y-auto px-4 py-2">
-        <ProfileIntro name={chatRoomName} profileUrl="/default-profile.png" />
+        <ProfileIntro name={`채팅방 ${chatRoomId}`} profileUrl="/default-profile.png" />
         <MessageList messages={messages} />
       </div>
       <MessageInput onSend={handleSend} />

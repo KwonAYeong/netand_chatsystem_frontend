@@ -13,7 +13,7 @@ const NotificationRadio = ({ value, onChange }: Props) => {
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium text-gray-700">전체 알림</p>
+      <p className="text-sm font-bold text-gray-700">전체 알림</p>
       <div className="flex gap-4">
         {options.map((option) => (
           <label

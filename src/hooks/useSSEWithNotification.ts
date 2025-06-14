@@ -2,21 +2,21 @@ import { useEffect, useRef } from 'react';
 import { useNotificationSettings } from '../context/NotificationSettingsContext';
 import { shouldShowNotification } from '../utils/shouldShowNotification';
 import { useChatUI } from '../context/ChatUIContext';
+import { NavigateFunction } from 'react-router-dom';
 
 export const useSSEWithNotification = (
   userId: number,
   windowIsFocused: boolean,
-  navigate: (path: string) => void
+  navigate: NavigateFunction
 ) => {
   const { notificationSettings, refreshSettings } = useNotificationSettings();
-  const { currentChatRoomId } = useChatUI();
+  const { currentChatRoomId, selectedRoom, setSelectedRoom } = useChatUI();
 
   const refreshSettingsRef = useRef(refreshSettings);
   const currentChatRoomIdRef = useRef(currentChatRoomId);
   const notificationSettingsRef = useRef(notificationSettings);
   const windowIsFocusedRef = useRef(windowIsFocused);
 
-  // ⭐ 여기에 추가 → 현재 열려있는 EventSource 보관
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
@@ -46,7 +46,6 @@ export const useSSEWithNotification = (
       });
     }
 
-    // ⭐ 기존 EventSource 있으면 먼저 닫기
     if (eventSourceRef.current) {
       console.log('⚠️ 기존 EventSource 닫기');
       eventSourceRef.current.close();
@@ -76,7 +75,15 @@ export const useSSEWithNotification = (
         event.preventDefault();
         window.focus();
         console.log('알림 클릭 - 채팅방 이동 시도:', data.chatRoomId);
-        navigate(`/chat?chatRoomId=${data.chatRoomId}`);
+
+        // ✅ selectedRoom 업데이트 추가!
+        setSelectedRoom({
+          id: data.chatRoomId,
+          name: data.senderName, // 지금은 senderName 그대로 사용
+          profileImage: data.senderProfileImage || '/default-profile.png',
+        });
+
+        navigate(`/chat/${data.chatRoomId}`);
       };
     };
 
@@ -118,7 +125,7 @@ export const useSSEWithNotification = (
 
         if (data.type === 'NOTIFICATION_SETTINGS_UPDATED') {
           console.log('🔄 알림 설정 변경 감지 → refreshSettings 호출');
-          refreshSettingsRef.current();  // ref 통해 호출
+          refreshSettingsRef.current();
         } else {
           handleNotification(data);
         }
@@ -145,7 +152,7 @@ export const useSSEWithNotification = (
     return () => {
       console.log('📢 SSE 연결 해제');
       eventSource.close();
-      eventSourceRef.current = null;  // ⭐ 꼭 null로 리셋
+      eventSourceRef.current = null;
     };
   }, [userId, navigate]);
 };

@@ -27,7 +27,7 @@ const TimezoneSelector = ({ start, end, onChangeStart, onChangeEnd }: Props) => 
 
   return (
     <div className="space-y-2">
-     <label className="text-sm font-medium text-gray-700">알림 허용</label>
+     <label className="text-sm font-bold text-gray-700">알림 허용</label>
 
       <div className="flex space-x-2">
         <select

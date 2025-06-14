@@ -5,10 +5,11 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import InviteUser from './InviteUser';
 import UserAvatar from '../common/UserAvatar';
+import { useNavigate } from 'react-router-dom';
 
 interface Props {
   currentUserId: number;
-  onSelectRoom: (id: number, name: string) => void;
+  setSelectedRoom: (room: { id: number; name: string; profileImage: string }) => void;
 }
 
 interface ChatRoom {
@@ -21,7 +22,7 @@ interface ChatRoom {
   unreadMessageCount: number;
 }
 
-export default function ChatList({ currentUserId, onSelectRoom }: Props) {
+export default function ChatList({ currentUserId,setSelectedRoom}: Props) {
   const [dmRooms, setDmRooms] = useState<ChatRoom[]>([]);
 
   // ✅ 채팅방 목록 불러오기
@@ -74,17 +75,27 @@ export default function ChatList({ currentUserId, onSelectRoom }: Props) {
   }, [currentUserId]);
 
   // ✅ 채팅방 클릭
-  const handleSelectRoom = (chatRoomId: number, chatRoomName: string) => {
-    onSelectRoom(chatRoomId, chatRoomName);
+  const navigate = useNavigate();
+
+  const handleSelectRoom = (room: ChatRoom) => {
+    setSelectedRoom({
+      id: room.chatRoomId,
+      name: room.chatRoomName,
+      profileImage: room.receiverProfileImage,
+    });
+
+    navigate(`/chat/${room.chatRoomId}`);
 
     setDmRooms((prev) =>
-      prev.map((room) =>
-        room.chatRoomId === chatRoomId
-          ? { ...room, unreadMessageCount: 0 }
-          : room
+      prev.map((r) =>
+        r.chatRoomId === room.chatRoomId
+          ? { ...r, unreadMessageCount: 0 }
+          : r
       )
     );
   };
+
+
 
   return (
     <div className="p-4">
@@ -94,7 +105,7 @@ export default function ChatList({ currentUserId, onSelectRoom }: Props) {
           dmRooms.map((room) => (
             <button
               key={room.chatRoomId}
-              onClick={() => handleSelectRoom(room.chatRoomId, room.chatRoomName)}
+              onClick={() => handleSelectRoom(room)}
               className="relative flex items-center gap-2 w-full text-gray-800 hover:bg-gray-100 px-2 py-1 rounded"
             >
               <UserAvatar
