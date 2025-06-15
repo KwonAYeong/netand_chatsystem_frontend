@@ -4,7 +4,7 @@ import NotificationRadio from '../settings/NotificationRadio';
 import { useUser } from '../../context/UserContext';
 import { getDMNotificationSettings, putDMNotificationLevel } from '../../api/settings';
 import { AlertType } from '../../types/notification';
-
+import { useNotificationSettings } from '../../context/NotificationSettingsContext';
 interface Props {
   chatRoomId: number;
   onClose: () => void;
@@ -12,15 +12,16 @@ interface Props {
 
 const DMNotificationModal = ({ chatRoomId, onClose }: Props) => {
   const { user } = useUser();
+  const { refreshSettings } = useNotificationSettings();
   const [notificationLevel, setNotificationLevel] = useState<AlertType | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-
+  
   useEffect(() => {
     if (!user?.userId) return;
 
     getDMNotificationSettings(user.userId, chatRoomId)
       .then((data) => {
-        setNotificationLevel(data.muteAll);
+        setNotificationLevel(data.alertType);
         setIsLoaded(true);
       })
       .catch((err) => {
@@ -35,6 +36,7 @@ const DMNotificationModal = ({ chatRoomId, onClose }: Props) => {
     try {
       await putDMNotificationLevel(user.userId, chatRoomId, notificationLevel);
       console.log('✅ DM 알림 설정 저장 완료');
+      await refreshSettings();
       onClose(); // 저장 후 모달 닫기
     } catch (err) {
       console.error('❌ DM 알림 레벨 저장 실패:', err);

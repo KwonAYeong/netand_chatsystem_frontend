@@ -100,33 +100,17 @@ export const putDMNotificationLevel = async (
   alertType: AlertType
 ) => {
   const payload = {
-    user_id: userId,
-    chat_room_id: chatRoomId,
-    alert_type: alertType,  // alertType 그대로 보내는게 맞음
+    userId,
+    chatRoomId,
+    alertType, 
   };
 
   console.log('📢 PUT DM 알림 설정 요청:', payload);
 
-  await api.put('/api/settings/notifications/dm', payload);
-};
-
-// DM Notification Settings (지금 dummy 사용중)
-const dummyNotificationSetting: {
-  userId: number;
-  chatRoomId: number;
-  muteAll: AlertType;
-  notificationStartTime: string | null;
-  notificationEndTime: string | null;
-} = {
-  userId: 1,
-  chatRoomId: 1,
-  muteAll: 'ALL',
-  notificationStartTime: null,
-  notificationEndTime: null,
+  await api.put('/notification-setting/chat-room', payload);
 };
 
 export const getDMNotificationSettings = async (userId: number, chatRoomId: number) => {
-  // const res = await api.get(`/api/settings/notifications/${userId}/${chatRoomId}`);
-  // return res.data;
-  return dummyNotificationSetting;
+   const res = await api.get(`/notification-setting/${userId}/${chatRoomId}`);
+   return res.data;
 };
