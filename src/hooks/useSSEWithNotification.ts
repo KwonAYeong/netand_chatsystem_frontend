@@ -75,6 +75,7 @@ export const useSSEWithNotification = (
         event.preventDefault();
         window.focus();
         console.log('알림 클릭 - 채팅방 이동 시도:', data.chatRoomId);
+        notification.close();
 
         // ✅ selectedRoom 업데이트 추가!
         setSelectedRoom({
