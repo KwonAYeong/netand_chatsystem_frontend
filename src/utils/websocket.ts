@@ -3,9 +3,13 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { useEffect, useRef } from 'react';
 
-const WEBSOCKET_URL = 'http://localhost:8080/ws'; // 로컬 백엔드의 엔드포인트
+const WEBSOCKET_URL = 'http://localhost:8080/ws';
 
-export default function useWebSocket(roomId: string, onMessage: (message: any) => void) {
+export default function useWebSocket(
+  roomId: string,
+  onMessage: (message: any) => void,
+  activeRoomId: string // ✅ 현재 열려 있는 채팅방 ID 추가
+) {
   const clientRef = useRef<Client | null>(null);
 
   useEffect(() => {
@@ -19,7 +23,13 @@ export default function useWebSocket(roomId: string, onMessage: (message: any) =
         client.subscribe(`/sub/chatroom/${roomId}`, (message) => {
           const payload = JSON.parse(message.body);
           console.log('📩 수신된 메시지:', payload);
-          onMessage(payload);
+
+          // ✅ 현재 방이 아니면 → onMessage로 넘겨서 뱃지 처리
+          if (payload.chatRoomId !== activeRoomId) {
+            onMessage(payload);
+          } else {
+            console.log('👀 현재 열려 있는 채팅방 → 뱃지 무시');
+          }
         });
       },
       onStompError: (frame) => {
@@ -33,7 +43,7 @@ export default function useWebSocket(roomId: string, onMessage: (message: any) =
     return () => {
       client.deactivate();
     };
-  }, [roomId, onMessage]);
+  }, [roomId, onMessage, activeRoomId]);
 
   const sendMessage = (message: any) => {
     if (clientRef.current && clientRef.current.connected) {

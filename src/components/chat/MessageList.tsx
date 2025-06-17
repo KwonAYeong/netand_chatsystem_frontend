@@ -1,10 +1,10 @@
-// src/components/chat/MessageList.tsx
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import MessageItem from './MessageItem';
 import type { Message } from '../../types/message';
 
 interface Props {
   messages: Message[];
+  bottomRef: React.RefObject<HTMLDivElement | null>; // ✅ Ref 타입 수정
 }
 
 function formatDate(dateStr: string) {
@@ -21,13 +21,13 @@ function isSameDate(a: string, b: string) {
   return new Date(a).toDateString() === new Date(b).toDateString();
 }
 
-export default function MessageList({ messages }: Props) {
-  const bottomRef = useRef<HTMLDivElement | null>(null);
-
+export default function MessageList({ messages, bottomRef }: Props) {
   // ✅ 메시지가 바뀔 때마다 자동 스크롤
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, bottomRef]);
 
   let lastDate: string | null = null;
 

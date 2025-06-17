@@ -1,8 +1,7 @@
-// src/components/chat/MessageItem.tsx
 import React, { useState } from 'react';
 import { useUser } from '../../context/UserContext';
 import type { Message } from '../../types/message';
-import { Smile, Bookmark } from 'lucide-react';
+import { Smile, Bookmark, Download } from 'lucide-react';
 import UserAvatar from '../common/UserAvatar';
 
 interface Props {
@@ -20,7 +19,7 @@ function isUrl(text: string): boolean {
 }
 
 function isImageFile(url: string): boolean {
-  return /\.(jpg|jpeg|png|gif)$/i.test(url);
+  return /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
 }
 
 function formatTime(timestamp: string) {
@@ -90,22 +89,17 @@ export default function MessageItem({ message, showAvatar }: Props) {
 
         {/* 파일 메시지 */}
         {message.messageType === 'FILE' && fileLink && (
-          <div className="mt-2 max-w-[300px] space-y-1">
+          
+            <div className="flex items-center gap-2">
+              <span>📎</span>
+              <span className="text-sm text-black break-all">{fileName}</span>
             <a
               href={fileLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-blue-600 underline break-all"
+              download={fileName}
+              className="flex items-center gap-1 text-xs text-gray-600 border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 transition"
             >
-              
+              <Download size={15} /> 
             </a>
-            {isImageFile(fileLink) && (
-              <img
-                src={fileLink}
-                alt="첨부 이미지"
-                className="rounded shadow max-w-full max-h-[200px]"
-              />
-            )}
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 
 interface Props {
   currentUserId: number;
+  selectedRoomId?: number;
   setSelectedRoom: (room: { id: number; name: string; profileImage: string }) => void;
 }
 
@@ -22,14 +23,13 @@ interface ChatRoom {
   unreadMessageCount: number;
 }
 
-export default function ChatList({ currentUserId,setSelectedRoom}: Props) {
+export default function ChatList({ currentUserId, selectedRoomId, setSelectedRoom }: Props) {
   const [dmRooms, setDmRooms] = useState<ChatRoom[]>([]);
+  const navigate = useNavigate();
 
-  // ✅ 채팅방 목록 불러오기
   const fetchChatRooms = useCallback(() => {
     getChatRoomsByUser(currentUserId)
       .then((res) => {
-        console.log('✅ 받은 채팅방 목록:', res.data);
         setDmRooms(res.data);
       })
       .catch((err) => {
@@ -41,19 +41,14 @@ export default function ChatList({ currentUserId,setSelectedRoom}: Props) {
     fetchChatRooms();
   }, [fetchChatRooms]);
 
-  // ✅ 실시간 unread 메시지 수신
   useEffect(() => {
     const socket = new SockJS('http://localhost:8080/ws');
     const client = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log('🟢 ChatList WebSocket 연결됨');
-
         client.subscribe(`/sub/unread/${currentUserId}`, (message) => {
-          const data = JSON.parse(message.body); // { chatRoomId, unreadMessageCount }
-          console.log('📩 실시간 unread 수신:', data);
-
+          const data = JSON.parse(message.body);
           setDmRooms((prev) =>
             prev.map((room) =>
               room.chatRoomId === data.chatRoomId
@@ -74,9 +69,6 @@ export default function ChatList({ currentUserId,setSelectedRoom}: Props) {
     };
   }, [currentUserId]);
 
-  // ✅ 채팅방 클릭
-  const navigate = useNavigate();
-
   const handleSelectRoom = (room: ChatRoom) => {
     setSelectedRoom({
       id: room.chatRoomId,
@@ -95,8 +87,6 @@ export default function ChatList({ currentUserId,setSelectedRoom}: Props) {
     );
   };
 
-
-
   return (
     <div className="p-4">
       <h2 className="text-sm font-bold mb-2 text-gray-700">다이렉트 메시지</h2>
@@ -106,7 +96,11 @@ export default function ChatList({ currentUserId,setSelectedRoom}: Props) {
             <button
               key={room.chatRoomId}
               onClick={() => handleSelectRoom(room)}
-              className="relative flex items-center gap-2 w-full text-gray-800 hover:bg-gray-100 px-2 py-1 rounded"
+              className={`relative flex items-center gap-2 w-full text-gray-800 px-2 py-1 rounded transition ${
+                room.chatRoomId === selectedRoomId
+                  ? 'bg-gray-200 font-semibold'
+                  : 'hover:bg-gray-100'
+              }`}
             >
               <UserAvatar
                 src={room.receiverProfileImage || '/default-profile.png'}
@@ -127,7 +121,6 @@ export default function ChatList({ currentUserId,setSelectedRoom}: Props) {
         )}
       </div>
 
-      {/* ✅ 사용자 초대 */}
       <div className="mt-4">
         <InviteUser senderId={currentUserId} onCreated={fetchChatRooms} />
       </div>

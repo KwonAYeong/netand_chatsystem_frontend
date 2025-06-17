@@ -1,4 +1,5 @@
 // src/components/layout/ChatLayout.tsx
+
 import Sidebar from '../sidebar/Sidebar';
 import ChatMenuPanel from '../panel/ChatMenuPanel';
 import ActivityPanel from '../panel/ActivityPanel';
@@ -11,7 +12,7 @@ import WelcomeScreen from '../common/WelcomeScreen';
 import { useParams } from 'react-router-dom';
 import { useChatUI as useChatUIContext } from '../../context/ChatUIContext';
 import { useChatUI as useChatUIUIHooks } from '../../hooks/useChatUI';
-import { useEffect } from 'react';  // ✅ useEffect import 필요
+import { useEffect, useRef, useCallback } from 'react';
 
 const ChatLayout = () => {
   const { user } = useUser();
@@ -29,27 +30,33 @@ const ChatLayout = () => {
   } = useChatUIContext();
 
   const { chatRoomId } = useParams();
+  const prevRoomIdRef = useRef<number | null>(null);
 
-  console.log('📦 현재 user context:', user);
-
-  // ✅ chatRoomId 바뀌면 selectedRoom도 업데이트 (핵심 추가 부분!)
- useEffect(() => {
-  if (!chatRoomId) {
-    setSelectedRoom(null);
-  } else {
-    setSelectedRoom((prev) => {
-      if (prev?.id === Number(chatRoomId)) {
-        return prev;
-      } else {
-        return {
-          id: Number(chatRoomId),
+  useEffect(() => {
+    if (!chatRoomId) {
+      setSelectedRoom(null);
+      prevRoomIdRef.current = null;
+    } else {
+      const newRoomId = Number(chatRoomId);
+      if (prevRoomIdRef.current !== newRoomId) {
+        setSelectedRoom({
+          id: newRoomId,
           name: `채팅방 ${chatRoomId}`,
           profileImage: '/default-profile.png',
-        };
+        });
+        prevRoomIdRef.current = newRoomId;
       }
-    });
-  }
-}, [chatRoomId, user?.userId, setSelectedRoom]);
+    }
+  }, [chatRoomId, setSelectedRoom]);
+
+  const onUnreadClear = useCallback(
+    (roomId: number) => {
+      setSelectedRoom((prev) =>
+        prev && prev.id === roomId ? { ...prev, unreadMessageCount: 0 } : prev
+      );
+    },
+    [setSelectedRoom]
+  );
 
   if (!user) {
     return <div className="p-4">유저 정보를 불러오는 중...</div>;
@@ -62,7 +69,11 @@ const ChatLayout = () => {
 
       {/* 중앙 패널 */}
       {activeMenu === 'home' && (
-        <ChatMenuPanel currentUserId={user.userId} setSelectedRoom={setSelectedRoom} />
+        <ChatMenuPanel
+          currentUserId={user.userId}
+          setSelectedRoom={setSelectedRoom}
+          selectedRoomId={selectedRoom?.id}
+        />
       )}
 
       {activeMenu === 'activity' && <ActivityPanel />}
@@ -75,6 +86,7 @@ const ChatLayout = () => {
             userId={user.userId}
             chatRoomName={selectedRoom?.name ?? `채팅방 ${chatRoomId}`}
             chatRoomProfileImage={selectedRoom?.profileImage ?? '/default-profile.png'}
+            onUnreadClear={onUnreadClear}
           />
         ) : (
           <WelcomeScreen

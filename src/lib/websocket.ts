@@ -12,9 +12,7 @@ const client = new Client({
 let connected = false;
 const subscriptions = new Map<string, StompSubscription>();
 
-
 // 소켓 연결
-
 export const connectSocket = (onConnected?: () => void) => {
   if (connected) return;
 
@@ -31,9 +29,7 @@ export const connectSocket = (onConnected?: () => void) => {
   client.activate();
 };
 
-
 // 소켓 연결 해제
-
 export const disconnectSocket = () => {
   if (connected) {
     subscriptions.forEach((sub) => sub.unsubscribe());
@@ -44,9 +40,7 @@ export const disconnectSocket = () => {
   }
 };
 
-
 // 메시지 전송
-
 export const sendMessage = (destination: string, payload: any) => {
   client.publish({
     destination,
@@ -54,12 +48,13 @@ export const sendMessage = (destination: string, payload: any) => {
   });
 };
 
-
 // 채팅방 구독
-
 export const subscribeToRoom = (
   chatRoomId: number,
-  onMessage: (msg: any) => void
+  onMessage: (msg: any) => void,
+  onUnreadIncrease: (roomId: number) => void,
+  onUnreadClear: (roomId: number) => void,
+  currentChatRoomId: number
 ) => {
   const destination = `/topic/chatroom/${chatRoomId}`;
 
@@ -70,16 +65,23 @@ export const subscribeToRoom = (
 
   const sub = client.subscribe(destination, (message: IMessage) => {
     const parsed = JSON.parse(message.body);
+
+    // 메시지는 항상 추가
     onMessage(parsed);
+
+    // 뱃지 로직
+    if (parsed.chatRoomId === currentChatRoomId) {
+      onUnreadClear(parsed.chatRoomId);
+    } else {
+      onUnreadIncrease(parsed.chatRoomId);
+    }
   });
 
   subscriptions.set(destination, sub);
   console.log(`📥 Subscribed to ${destination}`);
 };
 
-
- // 채팅방 구독 해제
-
+// 채팅방 구독 해제
 export const unsubscribeFromRoom = (chatRoomId: number) => {
   const destination = `/topic/chatroom/${chatRoomId}`;
   const sub = subscriptions.get(destination);
