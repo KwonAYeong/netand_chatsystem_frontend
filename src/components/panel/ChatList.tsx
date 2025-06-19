@@ -1,14 +1,18 @@
-// src/components/sidebar/ChatList.tsx
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { getChatRoomsByUser } from '../../api/chat';
-import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
+import {
+  connectSocket,
+  subscribeToRoom,
+  unsubscribeFromRoom,
+  default as client,
+} from '../../lib/websocket';
 import InviteUser from './InviteUser';
 import UserAvatar from '../common/UserAvatar';
 import { useNavigate } from 'react-router-dom';
 
 interface Props {
   currentUserId: number;
+  selectedRoomId?: number;
   setSelectedRoom: (room: { id: number; name: string; profileImage: string }) => void;
 }
 
@@ -20,16 +24,17 @@ interface ChatRoom {
   lastMessage: string;
   hasUnreadMessage: boolean;
   unreadMessageCount: number;
+  receiverEmail?: string;
 }
 
-export default function ChatList({ currentUserId,setSelectedRoom}: Props) {
+export default function ChatList({ currentUserId, selectedRoomId, setSelectedRoom }: Props) {
   const [dmRooms, setDmRooms] = useState<ChatRoom[]>([]);
+  const navigate = useNavigate();
+  const subscribedRef = useRef<Set<number>>(new Set());
 
-  // ✅ 채팅방 목록 불러오기
   const fetchChatRooms = useCallback(() => {
     getChatRoomsByUser(currentUserId)
       .then((res) => {
-        console.log('✅ 받은 채팅방 목록:', res.data);
         setDmRooms(res.data);
       })
       .catch((err) => {
@@ -41,41 +46,59 @@ export default function ChatList({ currentUserId,setSelectedRoom}: Props) {
     fetchChatRooms();
   }, [fetchChatRooms]);
 
-  // ✅ 실시간 unread 메시지 수신
   useEffect(() => {
-    const socket = new SockJS('http://localhost:8080/ws');
-    const client = new Client({
-      webSocketFactory: () => socket,
-      reconnectDelay: 5000,
-      onConnect: () => {
-        console.log('🟢 ChatList WebSocket 연결됨');
+    connectSocket();
+  }, []);
 
-        client.subscribe(`/sub/unread/${currentUserId}`, (message) => {
-          const data = JSON.parse(message.body); // { chatRoomId, unreadMessageCount }
-          console.log('📩 실시간 unread 수신:', data);
+  useEffect(() => {
+    const trySubscribe = () => {
+      if (!client.connected) {
+        setTimeout(trySubscribe, 200);
+        return;
+      }
 
-          setDmRooms((prev) =>
-            prev.map((room) =>
-              room.chatRoomId === data.chatRoomId
-                ? { ...room, unreadMessageCount: data.unreadMessageCount }
-                : room
-            )
+      dmRooms.forEach((room) => {
+        if (!subscribedRef.current.has(room.chatRoomId)) {
+          subscribeToRoom(
+            room.chatRoomId,
+            (msg: any) => {
+              console.log('📩 받은 메시지:', msg);
+            },
+            (roomId: number) => {
+              setDmRooms((prev) =>
+                prev.map((room) =>
+                  room.chatRoomId === roomId
+                    ? { ...room, unreadMessageCount: (room.unreadMessageCount || 0) + 1 }
+                    : room
+                )
+              );
+            },
+            (roomId: number) => {
+              setDmRooms((prev) =>
+                prev.map((room) =>
+                  room.chatRoomId === roomId
+                    ? { ...room, unreadMessageCount: 0 }
+                    : room
+                )
+              );
+            },
+            selectedRoomId || -1
           );
-        });
-      },
-      onStompError: (frame) => {
-        console.error('❌ STOMP 오류:', frame);
-      },
-    });
 
-    client.activate();
-    return () => {
-      client.deactivate();
+          subscribedRef.current.add(room.chatRoomId);
+        }
+      });
     };
-  }, [currentUserId]);
 
-  // ✅ 채팅방 클릭
-  const navigate = useNavigate();
+    trySubscribe();
+
+    return () => {
+      subscribedRef.current.forEach((roomId) => {
+        unsubscribeFromRoom(roomId);
+      });
+      subscribedRef.current.clear();
+    };
+  }, [dmRooms, selectedRoomId]);
 
   const handleSelectRoom = (room: ChatRoom) => {
     setSelectedRoom({
@@ -88,14 +111,10 @@ export default function ChatList({ currentUserId,setSelectedRoom}: Props) {
 
     setDmRooms((prev) =>
       prev.map((r) =>
-        r.chatRoomId === room.chatRoomId
-          ? { ...r, unreadMessageCount: 0 }
-          : r
+        r.chatRoomId === room.chatRoomId ? { ...r, unreadMessageCount: 0 } : r
       )
     );
   };
-
-
 
   return (
     <div className="p-4">
@@ -106,7 +125,11 @@ export default function ChatList({ currentUserId,setSelectedRoom}: Props) {
             <button
               key={room.chatRoomId}
               onClick={() => handleSelectRoom(room)}
-              className="relative flex items-center gap-2 w-full text-gray-800 hover:bg-gray-100 px-2 py-1 rounded"
+              className={`relative flex items-center gap-2 w-full text-gray-800 px-2 py-1 rounded transition ${
+                room.chatRoomId === selectedRoomId
+                  ? 'bg-gray-200 font-semibold'
+                  : 'hover:bg-gray-100'
+              }`}
             >
               <UserAvatar
                 src={room.receiverProfileImage || '/default_profile.jpg'}
@@ -128,9 +151,12 @@ export default function ChatList({ currentUserId,setSelectedRoom}: Props) {
         )}
       </div>
 
-      {/* ✅ 사용자 초대 */}
       <div className="mt-4">
-        <InviteUser senderId={currentUserId} onCreated={fetchChatRooms} />
+        <InviteUser
+          senderId={currentUserId}
+          onCreated={fetchChatRooms}
+          existingRooms={dmRooms}
+        />
       </div>
     </div>
   );

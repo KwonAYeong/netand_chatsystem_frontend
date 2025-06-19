@@ -1,18 +1,19 @@
 import type { Message } from '../types/message';
 
 export const transform = (res: any): Message => ({
-  id: res.messageId,
+  id: res.messageId ?? Date.now(),
   chatRoomId: res.chatRoomId,
   sender: {
     id: res.senderId,
     name: res.senderName,
     profileImageUrl: res.senderProfileImage,
   },
-  content: res.content,
-  messageType: res.messageType as 'TEXT' | 'FILE',
-  fileUrl: res.fileUrl || res.file_url,
-  createdAt: res.createdAt,
+  content: res.content ?? '',
+  messageType: res.messageType === 'FILE' ? 'FILE' : 'TEXT',
+  fileUrl: res.fileUrl || '',
+  createdAt: res.createdAt ?? new Date().toISOString(),
 });
+
 
 export function appendIfNotExistsById(
   messages: Message[],
@@ -24,4 +25,3 @@ export function appendIfNotExistsById(
   );
   return [...messages, ...filtered];
 }
-

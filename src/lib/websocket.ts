@@ -1,7 +1,9 @@
+// src/lib/websocket.ts
 import SockJS from 'sockjs-client';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 
 const socket = new SockJS('http://localhost:8080/ws');
+
 const client = new Client({
   webSocketFactory: () => socket,
   reconnectDelay: 5000,
@@ -12,16 +14,22 @@ const client = new Client({
 let connected = false;
 const subscriptions = new Map<string, StompSubscription>();
 
-
-// 소켓 연결
-
 export const connectSocket = (onConnected?: () => void) => {
-  if (connected) return;
+  if (connected) {
+    console.log('⚠️ Already connected. Skip activation.');
+    onConnected?.();
+    return;
+  }
 
   client.onConnect = () => {
     connected = true;
     console.log('✅ WebSocket connected');
     onConnected?.();
+  };
+
+  client.onWebSocketClose = () => {
+    connected = false;
+    console.warn('🔌 WebSocket 연결 해제됨');
   };
 
   client.onStompError = (frame) => {
@@ -30,9 +38,6 @@ export const connectSocket = (onConnected?: () => void) => {
 
   client.activate();
 };
-
-
-// 소켓 연결 해제
 
 export const disconnectSocket = () => {
   if (connected) {
@@ -44,22 +49,24 @@ export const disconnectSocket = () => {
   }
 };
 
+export const sendMessage = (payload: any) => {
+  if (!connected) {
+    console.warn('⚠️ WebSocket 연결 안 됨. 메시지 전송 실패');
+    return;
+  }
 
-// 메시지 전송
-
-export const sendMessage = (destination: string, payload: any) => {
   client.publish({
-    destination,
+    destination: '/app/chat.sendMessage', // ✅ 고정된 경로
     body: JSON.stringify(payload),
   });
 };
 
-
-// 채팅방 구독
-
 export const subscribeToRoom = (
   chatRoomId: number,
-  onMessage: (msg: any) => void
+  onMessage: (msg: any) => void,
+  onUnreadIncrease: (roomId: number) => void,
+  onUnreadClear: (roomId: number) => void,
+  currentChatRoomId: number
 ) => {
   const destination = `/topic/chatroom/${chatRoomId}`;
 
@@ -71,14 +78,17 @@ export const subscribeToRoom = (
   const sub = client.subscribe(destination, (message: IMessage) => {
     const parsed = JSON.parse(message.body);
     onMessage(parsed);
+
+    if (parsed.chatRoomId === currentChatRoomId) {
+      onUnreadClear(parsed.chatRoomId);
+    } else {
+      onUnreadIncrease(parsed.chatRoomId);
+    }
   });
 
   subscriptions.set(destination, sub);
   console.log(`📥 Subscribed to ${destination}`);
 };
-
-
- // 채팅방 구독 해제
 
 export const unsubscribeFromRoom = (chatRoomId: number) => {
   const destination = `/topic/chatroom/${chatRoomId}`;

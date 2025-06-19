@@ -2,12 +2,18 @@
 import { useState } from 'react';
 import { api } from '../../api/axios';
 
+interface ChatRoom {
+  chatRoomId: number;
+  chatRoomName: string; // 유저 이름
+}
+
 interface Props {
   senderId: number;
   onCreated?: (newRoom: { chatRoomId: number; chatRoomName: string }) => void;
+  existingRooms: ChatRoom[];
 }
 
-export default function InviteUser({ senderId, onCreated }: Props) {
+export default function InviteUser({ senderId, onCreated, existingRooms }: Props) {
   const [showModal, setShowModal] = useState(false);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,20 +24,31 @@ export default function InviteUser({ senderId, onCreated }: Props) {
       return;
     }
 
+    const enteredEmail = email.trim().toLowerCase();
+
+    // ✅ 채팅방 목록 중에서 이메일 주소 일부가 이름(chatRoomName)에 포함되어 있으면 중복으로 간주 (임시 처리)
+    const isAlreadyInvited = existingRooms.some((room) =>
+      room.chatRoomName.toLowerCase().includes(enteredEmail)
+    );
+
+    if (isAlreadyInvited) {
+      alert('이미 초대된 사용자입니다.');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await api.post('/chat/dm', {
         senderId,
-        receiverEmail: email.trim(),
+        receiverEmail: enteredEmail,
       });
 
-      const newRoom = res.data; // { chatRoomId, chatRoomName }
+      const newRoom = res.data;
 
       alert('✅ 채팅방이 생성되었습니다!');
       setShowModal(false);
       setEmail('');
-
-      onCreated?.(newRoom); // ✅ 새 채팅방 정보 전달
+      onCreated?.(newRoom);
     } catch (err: any) {
       console.error('❌ 채팅방 생성 실패:', err);
       alert(err.response?.data?.message || '채팅방 생성에 실패했습니다.');
@@ -53,12 +70,12 @@ export default function InviteUser({ senderId, onCreated }: Props) {
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-md p-6 w-96">
             <h2 className="text-lg font-semibold mb-4">다이렉트 메시지 시작하기</h2>
-            <label className="block mb-2 text-sm">초대</label>
+            <label className="block mb-2 text-sm">초대할 이메일</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="이메일 입력"
+              placeholder="example@email.com"
               className="w-full px-3 py-2 border border-gray-300 rounded mb-4"
             />
             <div className="flex justify-end gap-2">
