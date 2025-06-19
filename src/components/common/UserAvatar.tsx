@@ -6,6 +6,7 @@ interface UserAvatarProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   isActive?: boolean;
   showIsActive?: boolean;
+  onClick?: () => void;
 }
 
 const sizeMap = {
@@ -21,11 +22,14 @@ const UserAvatar = ({
   size = 'md',
   isActive = false,
   showIsActive,
+  onClick,
 }: UserAvatarProps) => {
   const isActiveColor = isActive ? 'bg-green-500' : 'bg-gray-400';
 
   return (
-    <div className={clsx('relative', sizeMap[size])}>
+    <div className={clsx('relative', sizeMap[size])}
+    onClick={onClick}
+    >
       <img
         src={src || '/default-avatar.png'}
         alt={alt}
