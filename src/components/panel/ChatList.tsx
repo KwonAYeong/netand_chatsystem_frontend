@@ -1,8 +1,11 @@
-// src/components/sidebar/ChatList.tsx
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { getChatRoomsByUser } from '../../api/chat';
-import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
+import {
+  connectSocket,
+  subscribeToRoom,
+  unsubscribeFromRoom,
+  default as client,
+} from '../../lib/websocket';
 import InviteUser from './InviteUser';
 import UserAvatar from '../common/UserAvatar';
 import { useNavigate } from 'react-router-dom';
@@ -21,11 +24,13 @@ interface ChatRoom {
   lastMessage: string;
   hasUnreadMessage: boolean;
   unreadMessageCount: number;
+  receiverEmail?: string;
 }
 
 export default function ChatList({ currentUserId, selectedRoomId, setSelectedRoom }: Props) {
   const [dmRooms, setDmRooms] = useState<ChatRoom[]>([]);
   const navigate = useNavigate();
+  const subscribedRef = useRef<Set<number>>(new Set());
 
   const fetchChatRooms = useCallback(() => {
     getChatRoomsByUser(currentUserId)
@@ -42,32 +47,58 @@ export default function ChatList({ currentUserId, selectedRoomId, setSelectedRoo
   }, [fetchChatRooms]);
 
   useEffect(() => {
-    const socket = new SockJS('http://localhost:8080/ws');
-    const client = new Client({
-      webSocketFactory: () => socket,
-      reconnectDelay: 5000,
-      onConnect: () => {
-        client.subscribe(`/sub/unread/${currentUserId}`, (message) => {
-          const data = JSON.parse(message.body);
-          setDmRooms((prev) =>
-            prev.map((room) =>
-              room.chatRoomId === data.chatRoomId
-                ? { ...room, unreadMessageCount: data.unreadMessageCount }
-                : room
-            )
-          );
-        });
-      },
-      onStompError: (frame) => {
-        console.error('❌ STOMP 오류:', frame);
-      },
-    });
+    connectSocket();
+  }, []);
 
-    client.activate();
-    return () => {
-      client.deactivate();
+  useEffect(() => {
+    const trySubscribe = () => {
+      if (!client.connected) {
+        setTimeout(trySubscribe, 200);
+        return;
+      }
+
+      dmRooms.forEach((room) => {
+        if (!subscribedRef.current.has(room.chatRoomId)) {
+          subscribeToRoom(
+            room.chatRoomId,
+            (msg: any) => {
+              console.log('📩 받은 메시지:', msg);
+            },
+            (roomId: number) => {
+              setDmRooms((prev) =>
+                prev.map((room) =>
+                  room.chatRoomId === roomId
+                    ? { ...room, unreadMessageCount: (room.unreadMessageCount || 0) + 1 }
+                    : room
+                )
+              );
+            },
+            (roomId: number) => {
+              setDmRooms((prev) =>
+                prev.map((room) =>
+                  room.chatRoomId === roomId
+                    ? { ...room, unreadMessageCount: 0 }
+                    : room
+                )
+              );
+            },
+            selectedRoomId || -1
+          );
+
+          subscribedRef.current.add(room.chatRoomId);
+        }
+      });
     };
-  }, [currentUserId]);
+
+    trySubscribe();
+
+    return () => {
+      subscribedRef.current.forEach((roomId) => {
+        unsubscribeFromRoom(roomId);
+      });
+      subscribedRef.current.clear();
+    };
+  }, [dmRooms, selectedRoomId]);
 
   const handleSelectRoom = (room: ChatRoom) => {
     setSelectedRoom({
@@ -80,9 +111,7 @@ export default function ChatList({ currentUserId, selectedRoomId, setSelectedRoo
 
     setDmRooms((prev) =>
       prev.map((r) =>
-        r.chatRoomId === room.chatRoomId
-          ? { ...r, unreadMessageCount: 0 }
-          : r
+        r.chatRoomId === room.chatRoomId ? { ...r, unreadMessageCount: 0 } : r
       )
     );
   };
@@ -123,7 +152,11 @@ export default function ChatList({ currentUserId, selectedRoomId, setSelectedRoo
       </div>
 
       <div className="mt-4">
-        <InviteUser senderId={currentUserId} onCreated={fetchChatRooms} />
+        <InviteUser
+          senderId={currentUserId}
+          onCreated={fetchChatRooms}
+          existingRooms={dmRooms}
+        />
       </div>
     </div>
   );
