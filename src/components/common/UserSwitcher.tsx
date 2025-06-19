@@ -4,7 +4,7 @@ import { useUser } from '../../context/UserContext';
 import { MdPerson } from "react-icons/md";
 const PersonIcon = MdPerson as unknown as React.FC<React.SVGProps<SVGSVGElement>>;
 
-const dummyUserIds = [1, 2, 3, 4];
+const dummyUserIds = [1, 2, 3, 4, 5, 6, 7, 8];
 
 const UserSwitcher = () => {
   const { user, setUserById } = useUser();

@@ -3,6 +3,7 @@ import { useUser } from '../../context/UserContext';
 import type { Message } from '../../types/message';
 import { Smile, Bookmark, Download } from 'lucide-react';
 import UserAvatar from '../common/UserAvatar';
+import { useChatUI } from '../../hooks/useChatUI';
 
 interface Props {
   message: Message;
@@ -35,10 +36,15 @@ export default function MessageItem({ message, showAvatar }: Props) {
   const { user } = useUser();
   const isMine = user?.userId === message.sender.id;
   const [hovered, setHovered] = useState(false);
-
+  const { setSelectedUser, setShowProfile } = useChatUI();
   const fileLink = message.fileUrl || message.content;
   const fileName = decodeURIComponent(fileLink?.split('/').pop() || '파일');
-
+ const handleAvatarClick = () => {
+  setSelectedUser({
+    userId: message.sender.id, // 👈 이 구조로 맞춰줘야 함
+  });
+  setShowProfile(true);
+};
   return (
     <div
       className="relative flex items-start px-4 py-1 gap-2 hover:bg-gray-100 rounded-md transition group"
@@ -50,11 +56,12 @@ export default function MessageItem({ message, showAvatar }: Props) {
         <UserAvatar
           src={
             isMine
-              ? user?.profileImageUrl || '/default-profile.png'
-              : message.sender.profileImageUrl || '/default-profile.png'
+              ? user?.profileImageUrl || '/default_profile.jpg'
+              : message.sender.profileImageUrl || '/default_profile.jpg'
           }
           alt={`${message.sender.name} 프로필`}
           size="sm"
+          onClick={handleAvatarClick}
         />
       ) : (
         <div className="w-6" />

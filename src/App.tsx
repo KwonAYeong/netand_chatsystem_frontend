@@ -7,7 +7,6 @@ import {
   useNavigate,
 } from 'react-router-dom';
 
-import Chat from './pages/chat';
 import { UserProvider, useUser } from './context/UserContext';
 import { NotificationSettingsProvider, useNotificationSettings } from './context/NotificationSettingsContext';
 import { useSSEWithNotification } from './hooks/useSSEWithNotification';
@@ -75,7 +74,7 @@ useEffect(() => {
 }, [user?.userId, navigate, refreshSettings]);
 
 
-  console.log('🔥 AppContent 렌더링 userId:', user?.userId);
+  //console.log('🔥 AppContent 렌더링 userId:', user?.userId);
 
   useSSEWithNotification(user?.userId ?? 0, windowIsFocused, navigate);
 

@@ -1,18 +1,18 @@
 // src/components/chat/ChatRoom.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  sendFileMessage,
   getMessages,
+  sendFileMessage,
   updateLastReadMessage,
 } from '../../api/chat';
 import Header from './Header';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import ProfileIntro from './ProfileIntro';
-import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
-import { transform, appendIfNotExistsById } from '../../utils/transform';
+import { transform } from '../../utils/transform';
 import type { Message } from '../../types/message';
+import useWebSocket from '../../hooks/useWebSocket';
+import { useUser } from '../../context/UserContext';
 
 interface ChatRoomProps {
   chatRoomId: number;
@@ -20,6 +20,7 @@ interface ChatRoomProps {
   chatRoomName: string;
   chatRoomProfileImage: string;
   onUnreadClear: (roomId: number) => void;
+  refetchChatRooms: () => void;
 }
 
 export default function ChatRoom({
@@ -28,61 +29,74 @@ export default function ChatRoom({
   chatRoomName,
   chatRoomProfileImage,
   onUnreadClear,
+  refetchChatRooms,
 }: ChatRoomProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const clientRef = useRef<Client | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const { user } = useUser();
 
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleIncomingMessage = (data: any) => {
+    const newMessage = transform(data);
+
+    setMessages((prev: Message[]) => {
+      const map = new Map<number, Message>(prev.map((m) => [m.id, m]));
+      map.set(newMessage.id, newMessage);
+      return Array.from(map.values()).sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+    });
+
+    if (
+      newMessage.sender.id !== userId &&
+      newMessage.chatRoomId === chatRoomId &&
+      typeof newMessage.id === 'number' &&
+      newMessage.id > 0
+    ) {
+      updateLastReadMessage(chatRoomId, userId, newMessage.id);
+      onUnreadClear(chatRoomId);
+    }
+
+    scrollToBottom();
+  };
+
+  const { sendMessage } = useWebSocket(
+    String(chatRoomId),
+    handleIncomingMessage,
+    String(chatRoomId),
+    refetchChatRooms
+  );
+
   useEffect(() => {
     getMessages(chatRoomId)
       .then((res) => {
         const transformed = res.data.map(transform);
-        setMessages(transformed);
+        const sorted = transformed.sort(
+          (a: Message, b: Message) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+
+        setMessages(sorted);
         scrollToBottom();
+
+        const lastMessage = sorted[sorted.length - 1];
+        if (
+          lastMessage &&
+          lastMessage.sender.id !== userId &&
+          lastMessage.chatRoomId === chatRoomId &&
+          typeof lastMessage.id === 'number' &&
+          lastMessage.id > 0
+        ) {
+          updateLastReadMessage(chatRoomId, userId, lastMessage.id);
+        }
+
+        onUnreadClear(chatRoomId);
       })
       .catch((err) => console.error('❌ 메시지 불러오기 실패:', err));
-
-    updateLastReadMessage(chatRoomId, userId)
-      .then(() => onUnreadClear(chatRoomId))
-      .catch((err) => console.error('❌ 초기 읽음 처리 실패:', err));
-
-    const socket = new SockJS('http://localhost:8080/ws');
-    const client = new Client({
-      webSocketFactory: () => socket,
-      reconnectDelay: 5000,
-      onConnect: () => {
-        client.subscribe(`/sub/chatroom/${chatRoomId}`, (message) => {
-          const data = JSON.parse(message.body);
-          const newMessage = transform(data);
-
-          setMessages((prev) => appendIfNotExistsById(prev, newMessage));
-          scrollToBottom();
-
-          updateLastReadMessage(chatRoomId, userId)
-            .then(() => onUnreadClear(chatRoomId))
-            .catch((err) => console.error('❌ 실시간 읽음 처리 실패:', err));
-        });
-      },
-      onWebSocketError: (err) => {
-        console.error('❌ WebSocket 연결 실패:', err);
-      },
-      onStompError: (frame) => {
-        console.error('❌ STOMP 프로토콜 오류:', frame);
-      },
-    });
-
-    client.activate();
-    clientRef.current = client;
-
-    return () => {
-      client.deactivate();
-      setMessages([]);
-    };
-  }, [chatRoomId, userId, onUnreadClear]);
+  }, [chatRoomId]);
 
   const uploadFile = async (file: File): Promise<string> => {
     const res = await sendFileMessage(chatRoomId, userId, file);
@@ -90,6 +104,8 @@ export default function ChatRoom({
   };
 
   const handleSend = async (text: string, file?: File) => {
+    console.log('🟢 handleSend 호출됨:', { text, file });
+
     try {
       let fileUrl: string | undefined;
 
@@ -97,6 +113,7 @@ export default function ChatRoom({
         fileUrl = await uploadFile(file);
       }
 
+      const now = new Date().toISOString();
       const payload = {
         chatRoomId,
         senderId: userId,
@@ -105,14 +122,25 @@ export default function ChatRoom({
         fileUrl,
       };
 
-      if (clientRef.current?.connected) {
-        clientRef.current.publish({
-          destination: '/pub/chat.sendMessage',
-          body: JSON.stringify(payload),
-        });
-      } else {
-        console.warn('⚠️ WebSocket 연결 안됨. 메시지 전송 불가');
-      }
+      const tempMessage: Message = {
+        id: Date.now(),
+        chatRoomId,
+        sender: {
+          id: userId,
+          name: '나',
+          profileImageUrl: '/default-profile.png',
+        },
+        content: text,
+        messageType: file ? 'FILE' : 'TEXT',
+        fileUrl,
+        createdAt: now,
+      };
+
+      setMessages((prev) => [...prev, tempMessage]);
+      scrollToBottom();
+
+      console.log('🚀 최종 전송 payload:', payload);
+      sendMessage(payload);
     } catch (err) {
       console.error('❌ 메시지 전송 실패:', err);
     }
@@ -127,7 +155,7 @@ export default function ChatRoom({
       />
 
       <div className="flex-1 overflow-y-auto px-4 py-2">
-        <ProfileIntro name={`채팅방 ${chatRoomId}`} profileUrl="/default-profile.png" />
+        <ProfileIntro name={`채팅방 ${chatRoomId}`} profileUrl="/default_profile.jpg" />
         <MessageList messages={messages} bottomRef={bottomRef} />
       </div>
 
@@ -135,3 +163,4 @@ export default function ChatRoom({
     </div>
   );
 }
+

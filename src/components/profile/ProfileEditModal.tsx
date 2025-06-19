@@ -1,45 +1,66 @@
 import { useChatUI } from '../../hooks/useChatUI';
 import { useUser } from '../../context/UserContext';
-import { getUserProfileById, updateUserProfile } from '../../api/profile';
+import {
+  getUserProfileById,
+  updateUserProfileInfo,
+  deleteUserProfileImage,
+  uploadUserProfileImage,
+} from '../../api/profile';
 import ProfileEditForm from './ProfileEditForm';
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const ProfileEditModal = () => {
   const { setShowProfileModal } = useChatUI();
-  const { user } = useUser();
+  const { user, setUser } = useUser();
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     if (!user?.userId) return;
-
+  console.log('🧩 useEffect 실행됨 - userId:', user.userId);
     const fetchProfile = async () => {
       const data = await getUserProfileById(user.userId);
+      console.log('📦 프로필 받아옴:', data);
       setProfile(data);
     };
 
     fetchProfile();
-  }, [user]);
+  
+  }, [user?.userId]);
+
   if (!user || !user.userId) return null;
 
-  const handleSave = async (form: any, imageFile: File | null) => {
+  const handleSave = async (form: any, imageFile: File | null,imageDeleted: boolean) => {
     try {
-      const updateData: any = {
+      await updateUserProfileInfo(user.userId, {
         name: form.name,
         company: form.company,
         position: form.position,
-      };
+      });
 
-      if (imageFile) {
-        updateData.profileImage = imageFile;
-      }
-
-      await updateUserProfile(user.userId, updateData);
+      if (imageDeleted) {
+      await deleteUserProfileImage(user.userId); 
+    } else if (imageFile) {
+      await uploadUserProfileImage(user.userId, imageFile);
+    }
+      const updated = await getUserProfileById(user.userId);
+      setUser({ ...updated, userId: updated.id });
+      setProfile(updated);
       alert('프로필이 저장되었습니다!');
       setShowProfileModal(false);
     } catch (err) {
       console.error('업데이트 실패:', err);
       alert('저장 실패');
+    }
+  };
+
+  const handleDeleteImage = async () => {
+    try {
+      await deleteUserProfileImage(user.userId);
+      alert('프로필 이미지가 삭제되었습니다.');
+    } catch (err) {
+      console.error('삭제 실패:', err);
+      alert('삭제 실패');
     }
   };
 
@@ -60,6 +81,7 @@ const ProfileEditModal = () => {
           user={profile}
           onCancel={() => setShowProfileModal(false)}
           onSave={handleSave}
+          onDeleteImage={handleDeleteImage}
         />
       </div>
     </div>

@@ -103,9 +103,10 @@ export default function ChatList({ currentUserId, selectedRoomId, setSelectedRoo
               }`}
             >
               <UserAvatar
-                src={room.receiverProfileImage || '/default-profile.png'}
+                src={room.receiverProfileImage || '/default_profile.jpg'}
                 alt={`${room.chatRoomName} 프로필`}
                 size="sm"
+                showIsActive
               />
               <span>{room.chatRoomName}</span>
 
