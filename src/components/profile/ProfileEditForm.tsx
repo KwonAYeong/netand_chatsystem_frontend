@@ -4,6 +4,7 @@ import UserAvatar from '../common/UserAvatar';
 
 interface ProfileEditFormProps {
   user: {
+    userId: number;
     name: string;
     email: string;
     company: string;
@@ -11,18 +12,19 @@ interface ProfileEditFormProps {
     profileImageUrl: string;
   };
   onCancel: () => void;
-  onSave: (form: any, imageFile: File | null) => void;
+  onSave: (form: any, imageFile: File | null, imageDeleted: boolean) => void;
+  onDeleteImage?: () => void;
 }
 
-const ProfileEditForm = ({ user, onCancel,onSave }: ProfileEditFormProps) => {
+const ProfileEditForm = ({ user, onCancel, onSave, onDeleteImage }: ProfileEditFormProps) => {
   const [form, setForm] = useState(user);
   const [previewImage, setPreviewImage] = useState(user.profileImageUrl);
   const [imageFile, setImageFile] = useState<File | null>(null);
-
+  const isDefaultImage = !previewImage || previewImage.includes('/default_profile.jpg');
   const handleChange = (field: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
-
+const [imageDeleted, setImageDeleted] = useState(false);
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -35,17 +37,27 @@ const ProfileEditForm = ({ user, onCancel,onSave }: ProfileEditFormProps) => {
     }
   };
 
+  const handleDeleteImage = () => {
+    if (previewImage === '/default_profile.jpg') {
+      alert('기본 이미지입니다. 삭제할 수 없습니다.');
+      return;
+    }
+    setPreviewImage('/default_profile.jpg');
+    setImageFile(null);
+    setImageDeleted(true); 
+ 
+  };
+
   const handleSubmit = () => {
     console.log('수정된 정보:', form);
-    console.log('변경된 프로필 사진:', imageFile); // → 백엔드 연동 필요
-    onCancel();
-    onSave(form, imageFile); 
+    console.log('변경된 프로필 사진:', imageFile);
+    onSave(form, imageFile, imageDeleted); // API 처리 포함은 상위 컴포넌트에서
   };
 
   return (
     <div className="p-4 space-y-4">
       <div className="flex flex-col items-center space-y-2">
-        <UserAvatar src={previewImage} size='lg' showIsActive={false} />
+        <UserAvatar src={previewImage} size="lg" showIsActive={false} />
         <label className="relative inline-block cursor-pointer">
           <input
             type="file"
@@ -57,6 +69,17 @@ const ProfileEditForm = ({ user, onCancel,onSave }: ProfileEditFormProps) => {
             프로필 사진 변경
           </div>
         </label>
+
+        <button
+          type="button"
+          onClick={handleDeleteImage}
+          disabled={isDefaultImage}
+          className={`mt-1 text-sm text-red-500 hover:underline ${
+            isDefaultImage ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          프로필 사진 삭제
+        </button>
       </div>
 
       <EditableField label="이메일" value={form.email} disabled />
@@ -79,6 +102,7 @@ const ProfileEditForm = ({ user, onCancel,onSave }: ProfileEditFormProps) => {
         </button>
       </div>
     </div>
+    
   );
 };
 

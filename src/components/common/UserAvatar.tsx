@@ -6,6 +6,7 @@ interface UserAvatarProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   isActive?: boolean;
   showIsActive?: boolean;
+  onClick?: () => void;
 }
 
 const sizeMap = {
@@ -21,16 +22,25 @@ const UserAvatar = ({
   size = 'md',
   isActive = false,
   showIsActive,
+  onClick,
 }: UserAvatarProps) => {
   const isActiveColor = isActive ? 'bg-green-500' : 'bg-gray-400';
+  const finalSrc = src?.trim() ? src : '/default_profile.jpg';
 
   return (
-    <div className={clsx('relative', sizeMap[size])}>
+    <div
+    className={clsx('relative', sizeMap[size], onClick && 'cursor-pointer')}
+    onClick={onClick}
+  >
       <img
-        src={src || '/default-avatar.png'}
+        src={finalSrc}
         alt={alt}
         onError={(e) => {
-          (e.currentTarget as HTMLImageElement).src = '/default_profile.jpg';
+          const target = e.currentTarget as HTMLImageElement;
+          if (target.src !== window.location.origin + '/default_profile.jpg') {
+            target.onerror = null; // 루프 방지
+            target.src = '/default_profile.jpg';
+          }
         }}
         className="rounded-md object-cover w-full h-full border border-gray-200"
       />

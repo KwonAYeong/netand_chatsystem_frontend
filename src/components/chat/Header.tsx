@@ -18,7 +18,7 @@ export default function Header({ chatRoomName, profileUrl, chatRoomId }: HeaderP
       <div className="flex items-center justify-between px-4 py-2 bg-white shadow-sm">
         <div className="flex items-center space-x-2">
           <UserAvatar
-            src={profileUrl || '/default-profile.png'}
+            src={profileUrl || '/default_profile.jpg'}
             alt={`${chatRoomName} 프로필`}
             size="sm"
           />

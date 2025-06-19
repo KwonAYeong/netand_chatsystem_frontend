@@ -1,5 +1,3 @@
-// src/hooks/useChatUI.tsx
-
 import { useState, createContext, useContext, useMemo } from 'react';
 
 type Menu = 'home' | 'activity' | 'settings';
@@ -13,31 +11,31 @@ interface ChatUIContextType {
   setShowProfileModal: (show: boolean) => void;
   showSettingsModal: boolean;
   setShowSettingsModal: (v: boolean) => void;
-
+  selectedUser: any | null;
+  setSelectedUser: (user: any | null) => void;
 }
 
-
-// 컨텍스트 생성
 const ChatUIContext = createContext<ChatUIContextType | null>(null);
 
-// Provider 컴포넌트
 export const ChatUIProvider = ({ children }: { children: React.ReactNode }) => {
   const [activeMenu, setActiveMenu] = useState<Menu>('home');
   const [showProfile, setShowProfile] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
 
   const value = useMemo(() => ({
-  activeMenu,
-  setActiveMenu,
-  showProfile,
-  setShowProfile,
-  showProfileModal,
-  setShowProfileModal,
-  showSettingsModal,
-   setShowSettingsModal,
-}), [activeMenu, showProfile, showProfileModal,showSettingsModal]);
+    activeMenu,
+    setActiveMenu,
+    showProfile,
+    setShowProfile,
+    showProfileModal,
+    setShowProfileModal,
+    showSettingsModal,
+    setShowSettingsModal,
+    selectedUser,
+    setSelectedUser,
+  }), [activeMenu, showProfile, showProfileModal, showSettingsModal, selectedUser]);
 
   return (
     <ChatUIContext.Provider value={value}>
@@ -46,7 +44,6 @@ export const ChatUIProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// 커스텀 훅
 export const useChatUI = () => {
   const context = useContext(ChatUIContext);
   if (!context) throw new Error('useChatUI must be used within ChatUIProvider');

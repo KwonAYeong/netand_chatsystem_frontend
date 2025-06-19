@@ -115,7 +115,7 @@ export default function ChatRoom({
     <div className="flex flex-col h-full">
       <Header chatRoomName={chatRoomName} chatRoomId={chatRoomId} profileUrl={chatRoomProfileImage} />
       <div className="flex-1 overflow-y-auto px-4 py-2">
-        <ProfileIntro name={`채팅방 ${chatRoomId}`} profileUrl="/default-profile.png" />
+        <ProfileIntro name={`채팅방 ${chatRoomId}`} profileUrl="/default_profile.jpg" />
         <MessageList messages={messages} />
       </div>
       <MessageInput onSend={handleSend} />
