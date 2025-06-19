@@ -16,7 +16,7 @@ const ProfileButton = () => {
       title="내 프로필"
     >
       <UserAvatar
-        src={user?.profileImageUrl || ''}
+        src={user?.profileImageUrl || '/default_profile.jpg'}
         size="md"
         isActive={user?.isActive}
         showIsActive={true}

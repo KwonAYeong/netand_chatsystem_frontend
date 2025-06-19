@@ -81,7 +81,7 @@ export const useSSEWithNotification = (
         setSelectedRoom({
           id: data.chatRoomId,
           name: data.senderName, // 지금은 senderName 그대로 사용
-          profileImage: data.senderProfileImage || '/default-profile.png',
+          profileImage: data.senderProfileImage || '/default_profile.jpg',
         });
 
         navigate(`/chat/${data.chatRoomId}`);

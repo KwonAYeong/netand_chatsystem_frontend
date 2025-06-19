@@ -109,9 +109,10 @@ export default function ChatList({ currentUserId,setSelectedRoom}: Props) {
               className="relative flex items-center gap-2 w-full text-gray-800 hover:bg-gray-100 px-2 py-1 rounded"
             >
               <UserAvatar
-                src={room.receiverProfileImage || '/default-profile.png'}
+                src={room.receiverProfileImage || '/default_profile.jpg'}
                 alt={`${room.chatRoomName} 프로필`}
                 size="sm"
+                showIsActive
               />
               <span>{room.chatRoomName}</span>
 

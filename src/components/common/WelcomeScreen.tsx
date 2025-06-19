@@ -18,7 +18,7 @@ const WelcomeScreen = ({ userName, profileImage }: WelcomeScreenProps) => {
 
       <div className="flex items-center gap-2 mb-2 text-xl font-semibold text-black">
         <UserAvatar
-          src={profileImage || '/default-profile.png'}
+          src={profileImage || '/default_profile.jpg'}
           alt={`${userName} 프로필`}
           size="md"
         />

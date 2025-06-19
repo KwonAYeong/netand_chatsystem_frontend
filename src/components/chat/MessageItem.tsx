@@ -57,8 +57,8 @@ export default function MessageItem({ message, showAvatar }: Props) {
         <UserAvatar
           src={
             isMine
-              ? user?.profileImageUrl || '/default-profile.png'
-              : message.sender.profileImageUrl || '/default-profile.png'
+              ? user?.profileImageUrl || '/default_profile.jpg'
+              : message.sender.profileImageUrl || '/default_profile.jpg'
           }
           alt={`${message.sender.name} 프로필`}
           size="sm"
