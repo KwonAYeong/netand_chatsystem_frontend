@@ -8,4 +8,5 @@ export type User = {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  nickname?: string;
 };

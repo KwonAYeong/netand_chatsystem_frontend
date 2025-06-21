@@ -1,36 +1,33 @@
+// src/context/ChatUIContext.tsx
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-// 1️⃣ Context 타입 정의
+// ✅ 1. selectedRoom 타입 확장
+type RoomType = 'dm' | 'group';
+
+interface SelectedRoom {
+  id: number;
+  type: RoomType;
+  name: string;
+  profileImage?: string;
+  unreadMessageCount?: number;
+}
+
 interface ChatUIContextType {
   currentChatRoomId: number | null;
   setCurrentChatRoomId: React.Dispatch<React.SetStateAction<number | null>>;
 
-  selectedRoom: {
-    id: number;
-    name: string;
-    profileImage: string;
-  } | null;
-  setSelectedRoom: React.Dispatch<
-    React.SetStateAction<{
-      id: number;
-      name: string;
-      profileImage: string;
-    } | null>
-  >;
+  selectedRoom: SelectedRoom | null;
+  setSelectedRoom: React.Dispatch<React.SetStateAction<SelectedRoom | null>>;
 }
 
-// 2️⃣ 초기값 null → 타입 명시적으로 설정
+// ✅ 2. Context 생성
 const ChatUIContext = createContext<ChatUIContextType | undefined>(undefined);
 
-// 3️⃣ Provider 컴포넌트 정의
+// ✅ 3. Provider 정의
 export const ChatUIProvider = ({ children }: { children: ReactNode }) => {
   const [currentChatRoomId, setCurrentChatRoomId] = useState<number | null>(null);
 
-  const [selectedRoom, setSelectedRoom] = useState<{
-    id: number;
-    name: string;
-    profileImage: string;
-  } | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<SelectedRoom | null>(null);
 
   return (
     <ChatUIContext.Provider
@@ -46,7 +43,7 @@ export const ChatUIProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// 4️⃣ Hook으로 제공
+// ✅ 4. 훅 export
 export const useChatUI = () => {
   const context = useContext(ChatUIContext);
   if (context === undefined) {

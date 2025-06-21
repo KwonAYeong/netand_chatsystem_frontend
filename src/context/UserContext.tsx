@@ -1,16 +1,14 @@
 // src/context/UserContext.tsx
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from 'react';
 import { getUserProfileById } from '../api/profile';
+import type { User } from '../types/user'; // ✅ 공통 타입으로 통일
 
-export interface User {
-  userId: number;
-  name?: string;
-  email?: string;
-  company?: string;
-  position?: string;
-  profileImageUrl?: string;
-  isActive?: boolean;
-}
 interface UserContextValue {
   user: User | null;
   setUser: (user: User | null) => void;
@@ -37,6 +35,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
         position: data.position,
         profileImageUrl: data.profileImageUrl,
         isActive: data.active,
+        createdAt: data.createdAt, // ✅ 추가
+        updatedAt: data.updatedAt, // ✅ 추가
+        nickname: data.nickname,   // ✅ 핵심 추가
       });
     } catch (err) {
       console.error('❌ 유저 정보 불러오기 실패', err);
@@ -44,7 +45,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    setUserById(2);
+    setUserById(2); // 테스트용 자동 로그인
   }, []);
 
   return (
@@ -53,7 +54,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     </UserContext.Provider>
   );
 }
-
 
 export function useUser(): UserContextValue {
   return useContext(UserContext);

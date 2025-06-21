@@ -12,14 +12,19 @@ import { useNavigate } from 'react-router-dom';
 
 interface Props {
   currentUserId: number;
-  selectedRoomId?: number;
-  setSelectedRoom: (room: { id: number; name: string; profileImage: string }) => void;
+  selectedRoomId?: number | null;
+  setSelectedRoom: (room: {
+    id: number;
+    type: 'dm';
+    name: string;
+    profileImage: string;
+  }) => void;
 }
 
 interface ChatRoom {
   chatRoomId: number;
   chatRoomName: string;
-  chatRoomType: string;
+  chatRoomType: string; // 'DM' | 'GROUP'
   receiverProfileImage: string;
   lastMessage: string;
   hasUnreadMessage: boolean;
@@ -35,7 +40,8 @@ export default function ChatList({ currentUserId, selectedRoomId, setSelectedRoo
   const fetchChatRooms = useCallback(() => {
     getChatRoomsByUser(currentUserId)
       .then((res) => {
-        setDmRooms(res.data);
+        const dmOnly = res.data.filter((room: ChatRoom) => room.chatRoomType === 'DM'); // ✅ DM만
+        setDmRooms(dmOnly);
       })
       .catch((err) => {
         console.error('❌ 채팅방 목록 불러오기 실패:', err);
@@ -103,6 +109,7 @@ export default function ChatList({ currentUserId, selectedRoomId, setSelectedRoo
   const handleSelectRoom = (room: ChatRoom) => {
     setSelectedRoom({
       id: room.chatRoomId,
+      type: 'dm', // ✅ 'dm' 추가
       name: room.chatRoomName,
       profileImage: room.receiverProfileImage,
     });

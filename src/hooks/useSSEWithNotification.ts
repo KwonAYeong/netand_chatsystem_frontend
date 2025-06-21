@@ -1,3 +1,4 @@
+// src/hooks/useSSEWithNotification.ts
 import { useEffect, useRef } from 'react';
 import { useNotificationSettings } from '../context/NotificationSettingsContext';
 import { shouldShowNotification } from '../utils/shouldShowNotification';
@@ -36,12 +37,12 @@ export const useSSEWithNotification = (
   }, [windowIsFocused]);
 
   useEffect(() => {
-     if (!userId || !notificationSettings) return;
+    if (!userId || !notificationSettings) return;
 
     console.log('🚀 useSSEWithNotification - EventSource 연결 시작됨 userId:', userId);
 
     if (Notification.permission === 'default') {
-      Notification.requestPermission().then(permission => {
+      Notification.requestPermission().then((permission) => {
         console.log('🔔 Notification permission:', permission);
       });
     }
@@ -77,10 +78,11 @@ export const useSSEWithNotification = (
         console.log('알림 클릭 - 채팅방 이동 시도:', data.chatRoomId);
         notification.close();
 
-        // ✅ selectedRoom 업데이트 추가!
+        // ✅ selectedRoom 업데이트: type: 'dm' 추가!
         setSelectedRoom({
           id: data.chatRoomId,
-          name: data.senderName, // 지금은 senderName 그대로 사용
+          type: 'dm', // 🔥 여기가 핵심
+          name: data.senderName,
           profileImage: data.senderProfileImage || '/default_profile.jpg',
         });
 
@@ -103,7 +105,7 @@ export const useSSEWithNotification = (
           if (Notification.permission === 'granted') {
             showNotification(data);
           } else if (Notification.permission === 'default') {
-            Notification.requestPermission().then(permission => {
+            Notification.requestPermission().then((permission) => {
               if (permission === 'granted') {
                 showNotification(data);
               }

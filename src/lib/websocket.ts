@@ -2,33 +2,34 @@
 import SockJS from 'sockjs-client';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 
-const socket = new SockJS('http://localhost:8080/ws');
+let socket: WebSocket | null = null;
 
 const client = new Client({
-  webSocketFactory: () => socket,
+  webSocketFactory: () => {
+    socket = new SockJS('http://localhost:8080/ws');
+    return socket;
+  },
   reconnectDelay: 5000,
   heartbeatIncoming: 4000,
   heartbeatOutgoing: 4000,
+  debug: (str) => console.debug('[STOMP DEBUG]', str),
 });
 
-let connected = false;
 const subscriptions = new Map<string, StompSubscription>();
 
 export const connectSocket = (onConnected?: () => void) => {
-  if (connected) {
-    console.log('⚠️ Already connected. Skip activation.');
+  if (client.connected || client.active) {
+    console.log('⚠️ WebSocket 이미 연결됨 또는 연결 시도 중');
     onConnected?.();
     return;
   }
 
   client.onConnect = () => {
-    connected = true;
     console.log('✅ WebSocket connected');
     onConnected?.();
   };
 
   client.onWebSocketClose = () => {
-    connected = false;
     console.warn('🔌 WebSocket 연결 해제됨');
   };
 
@@ -40,23 +41,22 @@ export const connectSocket = (onConnected?: () => void) => {
 };
 
 export const disconnectSocket = () => {
-  if (connected) {
+  if (client.connected) {
     subscriptions.forEach((sub) => sub.unsubscribe());
     subscriptions.clear();
     client.deactivate();
-    connected = false;
     console.log('🔌 WebSocket disconnected');
   }
 };
 
 export const sendMessage = (payload: any) => {
-  if (!connected) {
-    console.warn('⚠️ WebSocket 연결 안 됨. 메시지 전송 실패');
+  if (!client.connected) {
+    console.warn('⚠️ WebSocket 아직 연결 안 됨. 메시지 전송 실패');
     return;
   }
 
   client.publish({
-    destination: '/app/chat.sendMessage', // ✅ 고정된 경로
+    destination: '/pub/chat.sendMessage',
     body: JSON.stringify(payload),
   });
 };

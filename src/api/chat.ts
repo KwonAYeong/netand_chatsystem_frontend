@@ -52,3 +52,13 @@ export const updateLastReadMessage = (
     lastReadMessageId,
   });
 };
+
+
+export const getGroupChannelsByUser = (userId: number) => {
+  return api.get(`/chat/group/list/${userId}`);
+};
+
+// 멤버 조회
+
+export const getGroupMembers = (roomId: number) =>
+  api.get(`/chat/group/${roomId}/members`);
