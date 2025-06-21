@@ -1,13 +1,36 @@
-const ChannelList = () => {
-  return (
-    <section className="mb-6">
-      <h2 className="text-sm font-semibold text-gray-500 uppercase mb-2">채널</h2>
-      <ul className="space-y-1">
-        <li className="p-2 rounded hover:bg-gray-100 cursor-pointer"># 일반</li>
-        <li className="p-2 rounded hover:bg-gray-100 cursor-pointer"># 프로젝트</li>
-      </ul>
-    </section>
-  );
-};
+import React from 'react';
 
-export default ChannelList;
+interface GroupChatRoom {
+  chatRoomId: number;
+  chatRoomName: string;
+}
+
+interface Props {
+  channelRooms: GroupChatRoom[];
+  selectedRoomId?: number;
+  setSelectedRoom: (room: { id: number; name: string; type: 'group' }) => void;
+}
+
+export default function ChannelList({ channelRooms, selectedRoomId, setSelectedRoom }: Props) {
+  return (
+    <div className="space-y-1">
+      {channelRooms.map((room) => (
+        <div
+          key={room.chatRoomId}
+          onClick={() =>
+            setSelectedRoom({
+              id: room.chatRoomId,
+              name: room.chatRoomName,
+              type: 'group',
+            })
+          }
+          className={`pl-2 py-1 rounded cursor-pointer hover:bg-gray-100 ${
+            selectedRoomId === room.chatRoomId ? 'bg-gray-200 font-bold' : ''
+          }`}
+        >
+          # {room.chatRoomName}
+        </div>
+      ))}
+    </div>
+  );
+}

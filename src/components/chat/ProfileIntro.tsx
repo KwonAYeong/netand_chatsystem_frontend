@@ -5,9 +5,19 @@ import UserAvatar from '../common/UserAvatar';
 interface Props {
   name: string;
   profileUrl?: string;
+  chatRoomType: 'dm' | 'group';
 }
 
-const ProfileIntro = ({ name, profileUrl }: Props) => {
+const ProfileIntro = ({ name, profileUrl, chatRoomType }: Props) => {
+  if (chatRoomType === 'group') {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center">
+        <div className="text-3xl font-bold text-gray-800 mt-32">#{name}</div>
+      </div>
+    );
+  }
+
+  // 기본은 DM
   return (
     <div className="flex flex-col items-center justify-center py-8 bg-white">
       <UserAvatar src={profileUrl || '/default_profile.jpg'} size="lg" />
