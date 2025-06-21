@@ -3,17 +3,24 @@ import { AlertType } from '../../types/notification';
 interface Props {
   value: AlertType;
   onChange: (value: AlertType) => void;
+  options?: { label: string; value: AlertType }[];
+  labelTitle?: string;
 }
 
-const NotificationRadio = ({ value, onChange }: Props) => {
-  const options: { label: string; value: AlertType }[] = [
-    { label: '켜기', value: 'ALL' },
-    { label: '끄기', value: 'NONE' },
-  ];
+const defaultOptions: { label: string; value: AlertType }[] = [
+  { label: '켜기', value: 'ALL' },
+  { label: '끄기', value: 'NONE' },
+];
 
+const NotificationRadio = ({
+  value,
+  onChange,
+  options = defaultOptions,
+  labelTitle = '전체 알림',
+}: Props) => {
   return (
     <div className="space-y-2">
-      <p className="text-sm font-bold text-gray-700">전체 알림</p>
+      <p className="text-sm font-bold text-gray-700">{labelTitle}</p>
       <div className="flex gap-4">
         {options.map((option) => (
           <label

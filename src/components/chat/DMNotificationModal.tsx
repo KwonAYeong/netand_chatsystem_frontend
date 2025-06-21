@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import NotificationRadio from '../settings/NotificationRadio';
 import { useUser } from '../../context/UserContext';
-import { getDMNotificationSettings, putDMNotificationLevel } from '../../api/settings';
+import { getChatRoomNotificationSettings, putDMNotificationLevel } from '../../api/settings';
 import { AlertType } from '../../types/notification';
 import { useNotificationSettings } from '../../context/NotificationSettingsContext';
 interface Props {
@@ -19,7 +19,7 @@ const DMNotificationModal = ({ chatRoomId, onClose }: Props) => {
   useEffect(() => {
     if (!user?.userId) return;
 
-    getDMNotificationSettings(user.userId, chatRoomId)
+    getChatRoomNotificationSettings(user.userId, chatRoomId)
       .then((data) => {
         setNotificationLevel(data.alertType);
         setIsLoaded(true);

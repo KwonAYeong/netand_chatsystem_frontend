@@ -1,34 +1,30 @@
+// src/components/sidebar/ChannelList.tsx
 import React from 'react';
+import { useChatUI } from '../../context/ChatUIContext';
 
-interface GroupChatRoom {
-  chatRoomId: number;
-  chatRoomName: string;
-}
+export default function ChannelList() {
+  const { chatRooms, selectedRoom, setSelectedRoom } = useChatUI();
 
-interface Props {
-  channelRooms: GroupChatRoom[];
-  selectedRoomId?: number;
-  setSelectedRoom: (room: { id: number; name: string; type: 'group' }) => void;
-}
+  // 그룹 채팅방만 필터링
+  const groupRooms = chatRooms.filter((room) => room.type === 'group');
 
-export default function ChannelList({ channelRooms, selectedRoomId, setSelectedRoom }: Props) {
   return (
     <div className="space-y-1">
-      {channelRooms.map((room) => (
+      {groupRooms.map((room) => (
         <div
-          key={room.chatRoomId}
+          key={room.id}
           onClick={() =>
             setSelectedRoom({
-              id: room.chatRoomId,
-              name: room.chatRoomName,
+              id: room.id,
+              name: room.name,
               type: 'group',
             })
           }
           className={`pl-2 py-1 rounded cursor-pointer hover:bg-gray-100 ${
-            selectedRoomId === room.chatRoomId ? 'bg-gray-200 font-bold' : ''
+            selectedRoom?.id === room.id ? 'bg-gray-200 font-bold' : ''
           }`}
         >
-          # {room.chatRoomName}
+          # {room.name}
         </div>
       ))}
     </div>

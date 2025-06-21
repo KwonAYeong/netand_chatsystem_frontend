@@ -16,6 +16,7 @@ import { useUser } from '../../context/UserContext';
 import useWebSocket from '../../hooks/useWebSocket';
 import type { Message } from '../../types/message';
 import type { User } from '../../types/user';
+import { useChatUI } from '../../context/ChatUIContext';
 
 interface GroupChatRoomProps {
   roomId: number;
@@ -38,7 +39,7 @@ export default function GroupChatRoom({
   const [messages, setMessages] = useState<Message[]>([]);
   const [members, setMembers] = useState<User[]>([]);
   const [showMembers, setShowMembers] = useState(false);
-
+  const { setSelectedRoom } = useChatUI();
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const lastReadMessageIdRef = useRef<number>(0);
   const { user } = useUser();
@@ -91,7 +92,13 @@ export default function GroupChatRoom({
       disconnectWebSocket();
     };
   }, [roomId]);
-
+  useEffect(() => {
+    setSelectedRoom({
+      id: roomId,
+      type: 'group',
+      name: chatRoomName,
+    });
+  }, [roomId, chatRoomName]);
   useEffect(() => {
     getMessages(roomId)
       .then((res) => {

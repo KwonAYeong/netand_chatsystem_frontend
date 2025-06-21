@@ -68,13 +68,17 @@ export const subscribeToRoom = (
   onUnreadClear: (roomId: number) => void,
   currentChatRoomId: number
 ) => {
-  const destination = `/topic/chatroom/${chatRoomId}`;
+  
+  const destination = `/sub/chatroom/${chatRoomId}`;
 
   if (subscriptions.has(destination)) {
     console.log(`⚠️ Already subscribed to ${destination}`);
     return;
   }
-
+ if (!client.connected || !(client as any)._connection) {
+    console.warn(`❌ STOMP 연결 안 됨 — ${destination} 구독 취소`);
+    return;
+  }
   const sub = client.subscribe(destination, (message: IMessage) => {
     const parsed = JSON.parse(message.body);
     onMessage(parsed);
@@ -91,7 +95,7 @@ export const subscribeToRoom = (
 };
 
 export const unsubscribeFromRoom = (chatRoomId: number) => {
-  const destination = `/topic/chatroom/${chatRoomId}`;
+  const destination = `/sub/chatroom/${chatRoomId}`;
   const sub = subscriptions.get(destination);
 
   if (sub) {
