@@ -62,3 +62,15 @@ export const getGroupChannelsByUser = (userId: number) => {
 
 export const getGroupMembers = (roomId: number) =>
   api.get(`/chat/group/${roomId}/members`);
+
+// ✅ 채팅방 이름 변경
+export const patchGroupChatRoomName = (chatRoomId: number, newName: string) => {
+  return api.patch(`/chat/${chatRoomId}/name`, {
+    newName,
+  });
+};
+
+// ✅ 그룹 채팅방 나가기
+export const leaveGroupChat = (chatRoomId: number, userId: number) => {
+  return api.delete(`/chat/${chatRoomId}/leave/${userId}`);
+};

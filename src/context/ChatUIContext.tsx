@@ -18,6 +18,15 @@ interface ChatUIContextType {
 
   selectedRoom: SelectedRoom | null;
   setSelectedRoom: React.Dispatch<React.SetStateAction<SelectedRoom | null>>;
+
+  chatRooms: ChatRoomMeta[];
+  setChatRooms: React.Dispatch<React.SetStateAction<ChatRoomMeta[]>>;
+}
+
+interface ChatRoomMeta {
+  id: number;
+  name: string;
+  type: RoomType;
 }
 
 // ✅ 2. Context 생성
@@ -26,7 +35,7 @@ const ChatUIContext = createContext<ChatUIContextType | undefined>(undefined);
 // ✅ 3. Provider 정의
 export const ChatUIProvider = ({ children }: { children: ReactNode }) => {
   const [currentChatRoomId, setCurrentChatRoomId] = useState<number | null>(null);
-
+  const [chatRooms, setChatRooms] = useState<ChatRoomMeta[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<SelectedRoom | null>(null);
 
   return (
@@ -36,6 +45,8 @@ export const ChatUIProvider = ({ children }: { children: ReactNode }) => {
         setCurrentChatRoomId,
         selectedRoom,
         setSelectedRoom,
+        chatRooms,
+        setChatRooms,
       }}
     >
       {children}

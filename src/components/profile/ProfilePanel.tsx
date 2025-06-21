@@ -42,7 +42,7 @@ const ProfilePanel = () => {
 
   return (
     
-    <aside className="w-[440px] h-full bg-white border-l border-gray-200 right-0 top-0 shadow-lg flex flex-col z-50">
+    <aside className="w-[400px] h-full bg-white border-l border-gray-200 right-0 top-0 shadow-lg flex flex-col z-50">
       <ProfileHeader onClose={() => setShowProfile(false)} />
 
       <div className="flex-1 overflow-y-auto">

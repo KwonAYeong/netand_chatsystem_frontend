@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import ChatList from './ChatList';
 import ChannelList from './ChannelList';
 import InviteChannel from './InviteChannel';
-import type { SelectedRoom } from '../layout/ChatLayout';
 import { useUser } from '../../context/UserContext';
+import { useChatUI } from '../../context/ChatUIContext';
 
 interface Props {
   currentUserId: number;
-  setSelectedRoom: React.Dispatch<React.SetStateAction<SelectedRoom | null>>;
-  selectedRoom: SelectedRoom | null;
   unreadCounts?: Record<number, number>;
+  selectedRoomId?: number;
 }
 
 interface GroupChatRoom {
@@ -19,19 +18,26 @@ interface GroupChatRoom {
 
 export default function ChatMenuPanel({
   currentUserId,
-  selectedRoom,
-  setSelectedRoom,
   unreadCounts,
 }: Props) {
   const { user } = useUser();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [channels, setChannels] = useState<GroupChatRoom[]>([]);
-
+  const { selectedRoom, setChatRooms } = useChatUI();
+  const { setSelectedRoom } = useChatUI();
   useEffect(() => {
     if (!user) return;
     fetch(`http://localhost:8080/chat/group/list/${user.userId}`)
       .then((res) => res.json())
-      .then((data) => setChannels(data))
+      .then((data) => {
+        setChannels(data); // 유지해도 됨 (로컬 backup)
+        const converted = data.map((room: any) => ({
+          id: room.chatRoomId,
+          name: room.chatRoomName,
+          type: 'group',
+        }));
+        setChatRooms(converted); // ✅ 이걸 반드시 추가해야 ChannelList가 보여짐
+      })
       .catch((err) => console.error('❌ 그룹 채팅방 목록 실패:', err));
   }, [user]);
 
@@ -40,11 +46,7 @@ export default function ChatMenuPanel({
       {/* ✅ 채널 목록 + 초대 버튼 */}
       <div>
         <h2 className="text-xs font-bold text-gray-500 mb-1">채널</h2>
-        <ChannelList
-      channelRooms={channels}
-      selectedRoomId={selectedRoom?.type === 'group' ? selectedRoom.id : undefined}
-      setSelectedRoom={setSelectedRoom}
-        />
+        <ChannelList/>
         <button
           className="text-sm text-gray-600 hover:text-blue-600"
           onClick={() => setIsInviteOpen(true)}
@@ -69,7 +71,6 @@ export default function ChatMenuPanel({
           senderId={user.userId}
           existingRooms={channels}
           onCreated={(newRoom) => {
-            setChannels((prev) => [...prev, newRoom]);
             setSelectedRoom({
               id: newRoom.chatRoomId,
               name: newRoom.chatRoomName,

@@ -12,7 +12,9 @@ const ProfileIntro = ({ name, profileUrl, chatRoomType }: Props) => {
   if (chatRoomType === 'group') {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
-        <div className="text-3xl font-bold text-gray-800 mt-32">#{name}</div>
+        <div className="text-3xl font-bold text-gray-800 mt-32">
+          {`#${name}`}
+        </div>
       </div>
     );
   }
