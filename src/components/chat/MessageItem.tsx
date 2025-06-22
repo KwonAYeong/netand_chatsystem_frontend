@@ -37,14 +37,17 @@ export default function MessageItem({ message, showAvatar }: Props) {
   const isMine = user?.userId === message.sender.id;
   const [hovered, setHovered] = useState(false);
   const { setSelectedUser, setShowProfile } = useChatUI();
+
   const fileLink = message.fileUrl || message.content;
   const fileName = decodeURIComponent(fileLink?.split('/').pop() || '파일');
- const handleAvatarClick = () => {
-  setSelectedUser({
-    userId: message.sender.id, // 👈 이 구조로 맞춰줘야 함
-  });
-  setShowProfile(true);
-};
+
+  const handleAvatarClick = () => {
+    setSelectedUser({
+      userId: message.sender.id,
+    });
+    setShowProfile(true);
+  };
+
   return (
     <div
       className="relative flex items-start px-4 py-1 gap-2 hover:bg-gray-100 rounded-md transition group"
@@ -96,18 +99,27 @@ export default function MessageItem({ message, showAvatar }: Props) {
 
         {/* 파일 메시지 */}
         {message.messageType === 'FILE' && fileLink && (
-          
+          isImageFile(fileLink) ? (
+            <div className="max-w-[300px] max-h-[300px]">
+              <img
+                src={fileLink}
+                alt={fileName}
+                className="rounded-lg object-contain max-w-full max-h-[300px]"
+              />
+            </div>
+          ) : (
             <div className="flex items-center gap-2">
               <span>📎</span>
               <span className="text-sm text-black break-all">{fileName}</span>
-            <a
-              href={fileLink}
-              download={fileName}
-              className="flex items-center gap-1 text-xs text-gray-600 border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 transition"
-            >
-              <Download size={15} /> 
-            </a>
-          </div>
+              <a
+                href={fileLink}
+                download={fileName}
+                className="flex items-center gap-1 text-xs text-gray-600 border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 transition"
+              >
+                <Download size={15} />
+              </a>
+            </div>
+          )
         )}
       </div>
 

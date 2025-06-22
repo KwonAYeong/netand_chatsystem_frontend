@@ -1,6 +1,7 @@
+// src/api/chat.ts
 import { api } from './axios';
 
-// ✅ 채팅방 목록 조회
+// ✅ 1:1 채팅방 목록 조회
 export const getChatRoomsByUser = (userId: number) => {
   return api.get(`/chat/dm/list/${userId}`);
 };
@@ -40,7 +41,7 @@ export const sendFileMessage = (
   return api.post('/chat/message/file', formData);
 };
 
-// ✅ 메시지 읽음 처리 (lastReadMessageId 포함!)
+// ✅ 메시지 읽음 처리
 export const updateLastReadMessage = (
   chatRoomId: number,
   userId: number,
@@ -53,17 +54,17 @@ export const updateLastReadMessage = (
   });
 };
 
-
+// ✅ 그룹 채팅방 목록 조회
 export const getGroupChannelsByUser = (userId: number) => {
   return api.get(`/chat/group/list/${userId}`);
 };
 
-// 멤버 조회
+// ✅ 그룹 채팅방 멤버 목록 조회 (🚨 404 오류 해결 경로)
+export const getGroupMembers = (roomId: number) => {
+  return api.get(`/chat/${roomId}/participants`);
+};
 
-export const getGroupMembers = (roomId: number) =>
-  api.get(`/chat/group/${roomId}/members`);
-
-// ✅ 채팅방 이름 변경
+// ✅ 그룹 채팅방 이름 변경
 export const patchGroupChatRoomName = (chatRoomId: number, newName: string) => {
   return api.patch(`/chat/${chatRoomId}/name`, {
     newName,

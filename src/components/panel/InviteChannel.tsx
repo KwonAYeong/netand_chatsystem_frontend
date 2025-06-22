@@ -7,9 +7,16 @@ interface Props {
   onCreated: (newRoom: { chatRoomId: number; chatRoomName: string }) => void;
   existingRooms: { chatRoomName: string }[];
   onClose: () => void;
+  fetchChannelRooms: () => Promise<void>; // ✅ 추가됨
 }
 
-export default function InviteChannel({ senderId, onCreated, existingRooms, onClose }: Props) {
+export default function InviteChannel({
+  senderId,
+  onCreated,
+  existingRooms,
+  onClose,
+  fetchChannelRooms, // ✅ 추가됨
+}: Props) {
   const [channelName, setChannelName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [invitedEmails, setInvitedEmails] = useState<string[]>([]);
@@ -45,6 +52,9 @@ export default function InviteChannel({ senderId, onCreated, existingRooms, onCl
       });
 
       const newRoom = res.data;
+
+      await fetchChannelRooms(); // ✅ 생성 후 목록 즉시 반영
+
       alert('✅ 그룹 채팅방이 생성되었습니다!');
       onCreated(newRoom);
       onClose();

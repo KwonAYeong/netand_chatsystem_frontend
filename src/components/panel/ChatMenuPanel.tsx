@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ChatList from './ChatList';
 import ChannelList from './ChannelList';
 import InviteChannel from './InviteChannel';
@@ -16,37 +16,40 @@ interface GroupChatRoom {
   chatRoomName: string;
 }
 
-export default function ChatMenuPanel({
-  currentUserId,
-  unreadCounts,
-}: Props) {
+export default function ChatMenuPanel({ currentUserId, unreadCounts }: Props) {
   const { user } = useUser();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [channels, setChannels] = useState<GroupChatRoom[]>([]);
-  const { selectedRoom, setChatRooms } = useChatUI();
-  const { setSelectedRoom } = useChatUI();
-  useEffect(() => {
+  const { selectedRoom, setChatRooms, setSelectedRoom } = useChatUI();
+
+  // ✅ 그룹채팅 목록 fetch 함수 분리
+  const fetchChannelRooms = useCallback(async () => {
     if (!user) return;
-    fetch(`http://localhost:8080/chat/group/list/${user.userId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setChannels(data); // 유지해도 됨 (로컬 backup)
-        const converted = data.map((room: any) => ({
-          id: room.chatRoomId,
-          name: room.chatRoomName,
-          type: 'group',
-        }));
-        setChatRooms(converted); // ✅ 이걸 반드시 추가해야 ChannelList가 보여짐
-      })
-      .catch((err) => console.error('❌ 그룹 채팅방 목록 실패:', err));
-  }, [user]);
+    try {
+      const res = await fetch(`http://localhost:8080/chat/group/list/${user.userId}`);
+      const data = await res.json();
+      setChannels(data); // 로컬 백업
+      const converted = data.map((room: any) => ({
+        id: room.chatRoomId,
+        name: room.chatRoomName,
+        type: 'group',
+      }));
+      setChatRooms(converted); // ChannelList에 반영됨
+    } catch (err) {
+      console.error('❌ 그룹 채팅방 목록 실패:', err);
+    }
+  }, [user, setChatRooms]);
+
+  useEffect(() => {
+    fetchChannelRooms();
+  }, [fetchChannelRooms]);
 
   return (
     <div className="w-64 h-full p-4 border-r bg-white overflow-y-auto space-y-6 relative">
       {/* ✅ 채널 목록 + 초대 버튼 */}
       <div>
         <h2 className="text-xs font-bold text-gray-500 mb-1">채널</h2>
-        <ChannelList/>
+        <ChannelList />
         <button
           className="text-sm text-gray-600 hover:text-blue-600"
           onClick={() => setIsInviteOpen(true)}
@@ -65,11 +68,12 @@ export default function ChatMenuPanel({
         />
       </div>
 
-      {/* ✅ 초대 모달 (InviteChannel) */}
+      {/* ✅ 초대 모달 */}
       {isInviteOpen && user && (
         <InviteChannel
           senderId={user.userId}
           existingRooms={channels}
+          fetchChannelRooms={fetchChannelRooms} // ✅ 추가!
           onCreated={(newRoom) => {
             setSelectedRoom({
               id: newRoom.chatRoomId,
