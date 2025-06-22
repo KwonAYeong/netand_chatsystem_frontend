@@ -92,13 +92,15 @@ export default function GroupChatRoom({
       disconnectWebSocket();
     };
   }, [roomId]);
+
   useEffect(() => {
     setSelectedRoom({
       id: roomId,
       type: 'group',
       name: chatRoomName,
     });
-  }, [roomId, chatRoomName]);
+  }, [roomId, chatRoomName, members.length]);
+
   useEffect(() => {
     getMessages(roomId)
       .then((res) => {
@@ -114,6 +116,12 @@ export default function GroupChatRoom({
         if (last) tryUpdateLastRead(last);
       })
       .catch((err) => console.error('❌ 메시지 불러오기 실패:', err));
+  }, [roomId]);
+
+  useEffect(() => {
+    getGroupMembers(roomId)
+      .then((res) => setMembers(res.data))
+      .catch((err) => console.error('❌ 멤버 목록 불러오기 실패:', err));
   }, [roomId]);
 
   const uploadFile = async (file: File): Promise<string> => {
@@ -160,13 +168,14 @@ export default function GroupChatRoom({
     }
   };
 
+  // ✅ 수정된 멤버 목록 새로고침 함수
   const openMemberList = async () => {
     try {
       const res = await getGroupMembers(roomId);
       setMembers(res.data);
       setShowMembers(true);
     } catch (err) {
-      console.error('❌ 멤버 목록 불러오기 실패:', err);
+      console.error('❌ 멤버 새로고침 실패:', err);
     }
   };
 

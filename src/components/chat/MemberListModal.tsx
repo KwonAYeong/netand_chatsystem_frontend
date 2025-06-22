@@ -18,7 +18,7 @@ export default function MemberListModal({ members, onClose }: Props) {
         ) : (
           <ul className="space-y-2">
             {members.map((member) => (
-              <li key={member.name} className="flex items-center space-x-2">
+              <li key={member.email} className="flex items-center space-x-2">
                 <img
                   src={member.profileImageUrl || '/default-profile.png'}
                   alt={member.name}

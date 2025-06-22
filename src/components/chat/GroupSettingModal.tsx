@@ -1,36 +1,41 @@
+// src/components/panel/GroupSettingModal.tsx
 import { useEffect, useState } from 'react';
 import NotificationRadio from '../settings/NotificationRadio';
 import { AlertType } from '../../types/notification';
 import {
   patchGroupChatRoomName,
   leaveGroupChat,
+  getGroupMembers,
 } from '../../api/chat';
-import { putGroupNotificationLevel,getChatRoomNotificationSettings } from '../../api/settings';
+import {
+  putGroupNotificationLevel,
+  getChatRoomNotificationSettings,
+} from '../../api/settings';
 import { useUser } from '../../context/UserContext';
 import { useChatUI } from '../../context/ChatUIContext';
+import InviteMoreModal from '../panel/InviteMoreModal'; // ✅ 추가
+
 interface Props {
   roomId: number;
   onClose: () => void;
-  onLeft: () => void; 
+  onLeft: () => void;
 }
 
-const GroupSettingModal = ({
-  roomId,
-  onClose,
-  onLeft,
-}: Props) => {
+const GroupSettingModal = ({ roomId, onClose, onLeft }: Props) => {
   const { user } = useUser();
   const {
-  chatRooms,
-  setChatRooms,
-  selectedRoom,
-  setSelectedRoom,
-  setCurrentChatRoomId,
-} = useChatUI();
-console.log('🔥 모달 열림 시 selectedRoom:', selectedRoom);
+    chatRooms,
+    setChatRooms,
+    selectedRoom,
+    setSelectedRoom,
+    setCurrentChatRoomId,
+  } = useChatUI();
+
   const [name, setName] = useState('');
   const [notificationLevel, setNotificationLevel] = useState<AlertType>('ALL');
   const [loading, setLoading] = useState(true);
+  const [showInviteModal, setShowInviteModal] = useState(false); // ✅ 초대 모달 상태
+
   const handleSave = async () => {
     try {
       const trimmed = name.trim();
@@ -41,37 +46,28 @@ console.log('🔥 모달 열림 시 selectedRoom:', selectedRoom);
 
       if (trimmed !== selectedRoom?.name) {
         await patchGroupChatRoomName(roomId, trimmed);
-      }
-
-      // Context에 채팅방 이름 업데이트
-      setChatRooms((prev) =>
-        prev.map((room) =>
-          room.id === roomId ? { ...room, name: trimmed } : room
-        )
-      );
-
-      // 현재 열려 있는 채팅방이면 Header도 바꿔야 함
-      if (selectedRoom?.id === roomId) {
-        setSelectedRoom({ ...selectedRoom, name: trimmed });
+        setChatRooms((prev) =>
+          prev.map((room) =>
+            room.id === roomId ? { ...room, name: trimmed } : room
+          )
+        );
+        if (selectedRoom?.id === roomId) {
+          setSelectedRoom({ ...selectedRoom, name: trimmed });
+        }
       }
 
       await putGroupNotificationLevel(user!.userId, roomId, notificationLevel);
-
       onClose();
     } catch (err) {
       console.error('설정 저장 실패:', err);
     }
   };
 
-
   const handleLeaveGroup = async () => {
     if (!window.confirm('정말 이 채팅방을 나가시겠습니까?')) return;
     try {
       await leaveGroupChat(roomId, user!.userId);
-      // Context에서 채팅방 제거
       setChatRooms((prev) => prev.filter((room) => room.id !== roomId));
-
-      // 현재 열려 있던 채팅방이면 선택 해제
       if (selectedRoom?.id === roomId) {
         setSelectedRoom(null);
         setCurrentChatRoomId(null);
@@ -81,21 +77,18 @@ console.log('🔥 모달 열림 시 selectedRoom:', selectedRoom);
       console.error('채팅방 나가기 실패:', err);
     }
   };
+
   useEffect(() => {
-  if (selectedRoom?.name) {
-    setName(selectedRoom.name);
-  }
-}, [selectedRoom?.name]);
+    if (selectedRoom?.name) {
+      setName(selectedRoom.name);
+    }
+  }, [selectedRoom?.name]);
+
   useEffect(() => {
     const fetchAlertSetting = async () => {
       try {
         const res = await getChatRoomNotificationSettings(user!.userId, roomId);
-
-        if (!res || typeof res.alertType !== 'string') {
-          console.warn('⚠️ 알림 설정 없음, 기본값 사용');
-          return; // 또는 setNotificationLevel('ALL')
-        }
-
+        if (!res || typeof res.alertType !== 'string') return;
         setNotificationLevel(res.alertType as AlertType);
       } catch (err) {
         console.error('알림 설정 조회 실패:', err);
@@ -103,7 +96,6 @@ console.log('🔥 모달 열림 시 selectedRoom:', selectedRoom);
         setLoading(false);
       }
     };
-
     fetchAlertSetting();
   }, [roomId, user?.userId]);
 
@@ -112,7 +104,7 @@ console.log('🔥 모달 열림 시 selectedRoom:', selectedRoom);
       <div className="bg-white p-6 rounded-xl w-96 space-y-6">
         <h2 className="text-lg font-bold">그룹 채팅방 설정</h2>
 
-        {/* 채널명 변경 */}
+        {/* 채팅방 이름 */}
         <div className="space-y-1">
           <label className="text-sm font-medium text-gray-700">채팅방 이름</label>
           <input
@@ -136,6 +128,14 @@ console.log('🔥 모달 열림 시 selectedRoom:', selectedRoom);
           />
         )}
 
+        {/* 참여자 초대 버튼 */}
+        <button
+          onClick={() => setShowInviteModal(true)}
+          className="text-sm text-purple-600 hover:underline"
+        >
+          ➕ 참여자 초대
+        </button>
+
         {/* 채팅방 나가기 */}
         <button
           onClick={handleLeaveGroup}
@@ -157,6 +157,17 @@ console.log('🔥 모달 열림 시 selectedRoom:', selectedRoom);
           </button>
         </div>
       </div>
+
+      {/* ✅ 초대 모달 */}
+      {showInviteModal && (
+        <InviteMoreModal
+          roomId={roomId}
+          onClose={() => setShowInviteModal(false)}
+          onInvited={() => {
+            alert('초대가 완료되었습니다.');
+          }}
+        />
+      )}
     </div>
   );
 };
