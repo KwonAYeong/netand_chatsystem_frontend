@@ -128,13 +128,7 @@ const GroupSettingModal = ({ roomId, onClose, onLeft }: Props) => {
           />
         )}
 
-        {/* 참여자 초대 버튼 */}
-        <button
-          onClick={() => setShowInviteModal(true)}
-          className="text-sm text-purple-600 hover:underline"
-        >
-          ➕ 참여자 초대
-        </button>
+        
 
         {/* 채팅방 나가기 */}
         <button
@@ -161,7 +155,7 @@ const GroupSettingModal = ({ roomId, onClose, onLeft }: Props) => {
       {/* ✅ 초대 모달 */}
       {showInviteModal && (
         <InviteMoreModal
-          roomId={roomId}
+          chatRoomId={roomId}
           onClose={() => setShowInviteModal(false)}
           onInvited={() => {
             alert('초대가 완료되었습니다.');

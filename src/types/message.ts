@@ -12,6 +12,6 @@ export interface Message {
   fileUrl?: string;
   fileName?: string;
 
-  // ✅ 이 줄 추가해줘야 오류 해결됨
+  // ✅ 메시지 타입 추가
   messageType: 'TEXT' | 'FILE';
 }

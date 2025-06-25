@@ -6,8 +6,10 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  console.log('📡 요청 URL:', `${config.baseURL ?? ''}${config.url ?? ''}`);
   return config;
 });
+
 
 api.interceptors.response.use(
   (res) => res,

@@ -36,6 +36,7 @@ const ChatLayout = () => {
     setSelectedRoom,
   } = useChatUIContext();
 
+  // 📥 1:1 채팅방 목록 가져오기
   const fetchChatRooms = useCallback(() => {
     if (!user) return;
     getChatRoomsByUser(user.userId)
@@ -47,6 +48,7 @@ const ChatLayout = () => {
     fetchChatRooms();
   }, [fetchChatRooms]);
 
+  // ✅ 선택된 채팅방 변경 감지 → dm 또는 group 구분해서 이름 설정
   useEffect(() => {
     if (!chatRoomId) {
       setSelectedRoom(null);
@@ -55,18 +57,21 @@ const ChatLayout = () => {
       const newRoomId = Number(chatRoomId);
       if (prevRoomIdRef.current !== newRoomId) {
         const matchedRoom = dmRooms.find((room) => room.chatRoomId === newRoomId);
+
         setSelectedRoom({
           id: newRoomId,
-          type: 'dm',
+          type: matchedRoom?.chatRoomType === 'GROUP' ? 'group' : 'dm',
           name: matchedRoom?.chatRoomName || `채팅방 ${chatRoomId}`,
           profileImage: matchedRoom?.receiverProfileImage || '/default_profile.jpg',
         });
+
         prevRoomIdRef.current = newRoomId;
       }
     }
     setShowProfile(false);
   }, [chatRoomId, user?.userId, dmRooms, setSelectedRoom, setShowProfile]);
 
+  // 📬 안 읽은 메시지 수 관리
   const handleUnreadIncrease = (roomId: number) => {
     setUnreadCounts((prev) => ({
       ...prev,
@@ -99,49 +104,49 @@ const ChatLayout = () => {
       )}
       {activeMenu === 'activity' && <ActivityPanel />}
 
+      {/* 채팅화면 영역 */}
       <div className="flex flex-1 relative">
-      {/* 채팅 화면 영역 */}
-      <div className={`flex-1 transition-all duration-300 ${showProfile ? 'mr-[400px]' : ''}`}>
-        {selectedRoom ? (
-          selectedRoom.type === 'dm' ? (
-            <ChatRoom
-              chatRoomId={selectedRoom.id}
-              userId={user.userId}
-              chatRoomName={selectedRoom.name}
-              chatRoomProfileImage={selectedRoom.profileImage || ''}
-              onUnreadClear={handleUnreadClear}
-              refetchChatRooms={fetchChatRooms}
-            />
+        <div className={`flex-1 transition-all duration-300 ${showProfile ? 'mr-[400px]' : ''}`}>
+          {selectedRoom ? (
+            selectedRoom.type === 'dm' ? (
+              <ChatRoom
+                chatRoomId={selectedRoom.id}
+                userId={user.userId}
+                chatRoomName={selectedRoom.name}
+                chatRoomProfileImage={selectedRoom.profileImage || ''}
+                onUnreadClear={handleUnreadClear}
+                refetchChatRooms={fetchChatRooms}
+              />
+            ) : (
+              <GroupChatRoom
+              key={selectedRoom.id}
+                roomId={selectedRoom.id}
+                chatRoomName={selectedRoom.name}
+                currentUser={{
+                  id: user.userId,
+                  nickname: user.nickname ?? user.name,
+                }}
+                onUnreadIncrease={handleUnreadIncrease}
+                onUnreadClear={handleUnreadClear}
+              />
+            )
           ) : (
-            <GroupChatRoom
-              roomId={selectedRoom.id}
-              chatRoomName={selectedRoom.name}
-              currentUser={{
-                id: user.userId,
-                nickname: user.nickname ?? user.name,
-              }}
-              onUnreadIncrease={handleUnreadIncrease}
-              onUnreadClear={handleUnreadClear}
+            <WelcomeScreen
+              userName={user.name || '사용자'}
+              profileImage={user.profileImageUrl || '/default_profile.jpg'}
             />
-          )
-        ) : (
-          <WelcomeScreen
-            userName={user.name || '사용자'}
-            profileImage={user.profileImageUrl || '/default_profile.jpg'}
-          />
+          )}
+        </div>
+
+        {/* 우측 프로필 패널 */}
+        {showProfile && (
+          <div className="absolute top-0 right-0 w-[400px] h-full z-50 bg-white shadow-lg">
+            <ProfilePanel />
+          </div>
         )}
       </div>
 
-      {/* 우측 프로필 슬라이드 패널 */}
-      {showProfile && (
-        <div className="absolute top-0 right-0 w-[400px] h-full z-50 bg-white shadow-lg">
-          <ProfilePanel />
-        </div>
-      )}
-    </div>
-
-
-      {/* 모달들 */}
+      {/* 모달 */}
       {showProfileModal && <ProfileEditModal />}
       {showSettingsModal && <SettingsModal key={user?.userId} />}
     </div>

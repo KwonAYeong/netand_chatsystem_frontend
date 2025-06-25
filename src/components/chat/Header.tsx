@@ -11,43 +11,67 @@ interface HeaderProps {
   profileUrl?: string;
   memberCount?: number;
   onShowMembers?: () => void;
+  onInviteClick?: () => void;
 }
 
 export default function Header({
   chatRoomName,
   chatRoomId,
   chatRoomType = 'dm',
-  memberCount = 0, // ✅ 기본값 0으로 설정
+  profileUrl,
+  memberCount = 0,
   onShowMembers,
+  onInviteClick,
 }: HeaderProps) {
-  const [showSettingModal, setShowSettingModal] = useState(false);  
+  const [showSettingModal, setShowSettingModal] = useState(false);
   const { selectedRoom, setSelectedRoom, setCurrentChatRoomId } = useChatUI();
+
   console.log('🧪 Header에서 selectedRoom:', selectedRoom);
+
   return (
     <>
       <div className="flex items-center justify-between px-4 py-2 bg-white shadow-sm">
-        {/* 좌측: 채팅방 이름 + 멤버 보기 */}
+        {/* 좌측: 채팅방 이름 or 프로필 */}
         <div className="flex items-center space-x-3 font-bold text-base text-gray-800">
-          <span>{`#${selectedRoom?.name ?? '이름 없음'}`}</span>
-
-          {/* ✅ 그룹 채팅이면 항상 버튼 표시 */}
-          {selectedRoom?.type === 'group' && (
-            <button
-              onClick={onShowMembers}
-              className="text-sm text-violet-600 hover:underline flex items-center space-x-1"
-            >
-              <span>👥 {memberCount}</span>
-            </button>
+          {selectedRoom?.type === 'dm' ? (
+            <div className="flex items-center space-x-2">
+              <img
+                src={selectedRoom.profileImage || '/default-profile.png'}
+                alt={selectedRoom.name}
+                className="w-8 h-8 rounded"
+              />
+              <span className="text-base font-semibold">{selectedRoom.name}</span>
+            </div>
+          ) : (
+            <>
+              <span>{`#${selectedRoom?.name ?? '이름 없음'}`}</span>
+              <button
+                onClick={onShowMembers}
+                className="text-sm text-violet-600 hover:underline flex items-center space-x-1"
+              >
+                <span>👥 {memberCount}</span>
+              </button>
+            </>
           )}
         </div>
 
-        {/* 우측: 설정 버튼 */}
-        {chatRoomId && (
-          <SettingsIcon
-            className="text-xl cursor-pointer"
-            onClick={() => setShowSettingModal(true)}
-          />
-        )}
+        {/* 우측: 멤버초대 + 설정 */}
+        <div className="flex items-center space-x-3">
+          {selectedRoom?.type === 'group' && (
+            <button
+              onClick={onInviteClick}
+              className="text-sm text-black-600 hover:underline flex items-center space-x-1"
+            >
+              <span>멤버 초대</span>
+            </button>
+          )}
+          {chatRoomId && (
+            <SettingsIcon
+              className="text-xl cursor-pointer"
+              onClick={() => setShowSettingModal(true)}
+            />
+          )}
+        </div>
       </div>
 
       {/* 모달: DM 또는 그룹에 따라 분기 */}
@@ -63,8 +87,7 @@ export default function Header({
             onClose={() => setShowSettingModal(false)}
             onLeft={() => {
               setShowSettingModal(false);
-              // TODO: 나가기 후 처리 (채팅방 닫기 등)
-               if (selectedRoom?.id === chatRoomId) {
+              if (selectedRoom?.id === chatRoomId) {
                 setSelectedRoom(null);
                 setCurrentChatRoomId(null);
               }
