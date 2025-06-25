@@ -22,7 +22,7 @@ export default function MemberListModal({ members, onClose }: Props) {
                 <img
                   src={member.profileImageUrl || '/default-profile.png'}
                   alt={member.name}
-                  className="w-8 h-8 rounded-full"
+                  className="w-8 h-8 rounded"
                 />
                 <span className="text-sm text-gray-800">{member.name}</span>
               </li>

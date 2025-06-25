@@ -1,4 +1,3 @@
-// src/api/chat.ts
 import { api } from './axios';
 
 // ✅ 1:1 채팅방 목록 조회
@@ -59,7 +58,7 @@ export const getGroupChannelsByUser = (userId: number) => {
   return api.get(`/chat/group/list/${userId}`);
 };
 
-// ✅ 그룹 채팅방 멤버 목록 조회 (🚨 404 오류 해결 경로)
+// ✅ 그룹 채팅방 멤버 목록 조회
 export const getGroupMembers = (roomId: number) => {
   return api.get(`/chat/${roomId}/participants`);
 };
@@ -74,4 +73,14 @@ export const patchGroupChatRoomName = (chatRoomId: number, newName: string) => {
 // ✅ 그룹 채팅방 나가기
 export const leaveGroupChat = (chatRoomId: number, userId: number) => {
   return api.delete(`/chat/${chatRoomId}/leave/${userId}`);
+};
+
+// ✅ 그룹 채팅방에 유저 초대 (🚨 경로 수정 완료!)
+export const inviteToGroupChat = (
+  chatRoomId: number,
+  inviteEmails: string[]
+) => {
+  return api.post(`/chat/${chatRoomId}/invite`, {
+    inviteEmails,
+  });
 };

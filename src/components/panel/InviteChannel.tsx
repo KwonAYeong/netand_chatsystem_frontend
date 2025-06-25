@@ -1,13 +1,14 @@
 // src/components/panel/InviteChannel.tsx
 import { useState } from 'react';
 import { api } from '../../api/axios';
+import { useChatUI } from '../../context/ChatUIContext';
 
 interface Props {
   senderId: number;
   onCreated: (newRoom: { chatRoomId: number; chatRoomName: string }) => void;
   existingRooms: { chatRoomName: string }[];
   onClose: () => void;
-  fetchChannelRooms: () => Promise<void>; // ✅ 추가됨
+  fetchChannelRooms: () => Promise<void>;
 }
 
 export default function InviteChannel({
@@ -15,12 +16,13 @@ export default function InviteChannel({
   onCreated,
   existingRooms,
   onClose,
-  fetchChannelRooms, // ✅ 추가됨
+  fetchChannelRooms,
 }: Props) {
   const [channelName, setChannelName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [invitedEmails, setInvitedEmails] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const { setChatRooms } = useChatUI();
 
   const isEmailValid = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim().toLowerCase());
@@ -53,10 +55,26 @@ export default function InviteChannel({
 
       const newRoom = res.data;
 
-      await fetchChannelRooms(); // ✅ 생성 후 목록 즉시 반영
+      // ✅ 로컬 상태에 즉시 반영
+      setChatRooms((prev) => [
+        ...prev,
+        {
+          id: newRoom.chatRoomId,
+          name: channelName.trim(),
+          type: 'group',
+        },
+      ]);
+
+      await fetchChannelRooms(); // 백엔드 데이터 동기화
 
       alert('✅ 그룹 채팅방이 생성되었습니다!');
-      onCreated(newRoom);
+
+      // ✅ 직접 입력한 채널명으로 자동 진입 정보 전달
+      onCreated({
+        chatRoomId: newRoom.chatRoomId,
+        chatRoomName: channelName.trim(), // ← 여기 포인트!
+      });
+
       onClose();
     } catch (err: any) {
       console.error('❌ 생성 실패:', err);

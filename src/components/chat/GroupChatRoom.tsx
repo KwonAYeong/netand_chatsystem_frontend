@@ -11,6 +11,7 @@ import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import ProfileIntro from './ProfileIntro';
 import MemberListModal from './MemberListModal';
+import InviteMoreModal from '../panel/InviteMoreModal'; // ✅ 추가
 import { transform } from '../../utils/transform';
 import { useUser } from '../../context/UserContext';
 import useWebSocket from '../../hooks/useWebSocket';
@@ -39,6 +40,7 @@ export default function GroupChatRoom({
   const [messages, setMessages] = useState<Message[]>([]);
   const [members, setMembers] = useState<User[]>([]);
   const [showMembers, setShowMembers] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false); // ✅ 초대 모달 상태
   const { setSelectedRoom } = useChatUI();
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const lastReadMessageIdRef = useRef<number>(0);
@@ -168,7 +170,6 @@ export default function GroupChatRoom({
     }
   };
 
-  // ✅ 수정된 멤버 목록 새로고침 함수
   const openMemberList = async () => {
     try {
       const res = await getGroupMembers(roomId);
@@ -187,18 +188,33 @@ export default function GroupChatRoom({
         chatRoomType="group"
         memberCount={members.length}
         onShowMembers={openMemberList}
+        onInviteClick={() => setShowInviteModal(true)} // ✅ 초대 버튼 연결
       />
+
       <div className="flex-1 overflow-y-auto px-4 py-2">
         <ProfileIntro
-          name={`채널 ${chatRoomName}`}
+          name={`채널 ${chatRoomName || '이름 없음'}`}
           profileUrl="/default_profile.jpg"
           chatRoomType="group"
         />
         <MessageList messages={messages} bottomRef={bottomRef} />
       </div>
+
       <MessageInput onSend={handleSend} />
+
       {showMembers && (
         <MemberListModal members={members} onClose={() => setShowMembers(false)} />
+      )}
+
+      {showInviteModal && (
+        <InviteMoreModal
+          chatRoomId={roomId}
+          onClose={() => setShowInviteModal(false)}
+          onInvited={() => {
+            setShowInviteModal(false);
+            openMemberList(); // ✅ 새 멤버 반영
+          }}
+        />
       )}
     </div>
   );

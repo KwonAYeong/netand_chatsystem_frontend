@@ -1,38 +1,19 @@
 import React, { useState } from 'react';
+import { Message } from '../../types/message';
 import { useUser } from '../../context/UserContext';
-import type { Message } from '../../types/message';
-import { Smile, Bookmark, Download } from 'lucide-react';
-import UserAvatar from '../common/UserAvatar';
-import { useChatUI } from '../../hooks/useChatUI';
+import { useChatUI } from '../../context/ChatUIContext';
+import { Download } from 'lucide-react';
 
 interface Props {
   message: Message;
-  showAvatar: boolean;
+  isGrouped: boolean;
 }
 
-function isUrl(text: string): boolean {
-  try {
-    const url = new URL(text);
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
+const isImageFile = (fileName: string) => {
+  return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(fileName);
+};
 
-function isImageFile(url: string): boolean {
-  return /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
-}
-
-function formatTime(timestamp: string) {
-  const date = new Date(timestamp);
-  return date.toLocaleTimeString('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
-}
-
-export default function MessageItem({ message, showAvatar }: Props) {
+export default function MessageItem({ message, isGrouped }: Props) {
   const { user } = useUser();
   const isMine = user?.userId === message.sender.id;
   const [hovered, setHovered] = useState(false);
@@ -42,11 +23,14 @@ export default function MessageItem({ message, showAvatar }: Props) {
   const fileName = decodeURIComponent(fileLink?.split('/').pop() || '파일');
 
   const handleAvatarClick = () => {
-    setSelectedUser({
-      userId: message.sender.id,
-    });
-    setShowProfile(true);
+    setSelectedUser?.({ userId: message.sender.id });
+    setShowProfile?.(true);
   };
+
+  const timeString = new Date(message.createdAt).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   return (
     <div
@@ -54,86 +38,69 @@ export default function MessageItem({ message, showAvatar }: Props) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* 프로필 이미지 */}
-      {showAvatar ? (
-        <UserAvatar
-          src={
-            isMine
-              ? user?.profileImageUrl || '/default_profile.jpg'
-              : message.sender.profileImageUrl || '/default_profile.jpg'
-          }
-          alt={`${message.sender.name} 프로필`}
-          size="sm"
+      {!isGrouped && (
+        <img
+          src={message.sender.profileImageUrl || '/profileEX.png'}
+          alt="avatar"
           onClick={handleAvatarClick}
+          className="w-9 h-9 rounded-md object-cover mt-1 cursor-pointer hover:opacity-80"
         />
-      ) : (
-        <div className="w-6" />
       )}
 
       <div className="flex flex-col">
-        {/* 이름 + 시간 */}
-        {showAvatar && (
-          <div className="flex items-center gap-1 mb-1 text-xs text-gray-500">
-            <span>{message.sender.name}</span>
-            <span className="text-gray-400">· {formatTime(message.createdAt)}</span>
+        {!isGrouped && (
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm font-semibold text-gray-800">
+              {message.sender.name}
+            </span>
+            <span className="text-xs text-gray-400">{timeString}</span>
           </div>
         )}
 
-        {/* 텍스트 메시지 */}
-        {message.messageType === 'TEXT' && message.content && (
-          <div className="text-sm text-black max-w-[300px] break-words">
-            {isUrl(message.content) ? (
-              <a
-                href={message.content}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline"
-              >
-                📎 {message.content}
-              </a>
+        <div
+          className={`text-sm whitespace-pre-line leading-relaxed ${
+            isMine ? 'text-blue-800' : 'text-gray-900'
+          } ${isGrouped ? 'pl-[54px]' : 'mt-1'}`}
+        >
+          {/* 텍스트 메시지 */}
+          {message.messageType === 'TEXT' && message.content}
+
+          {/* 파일 메시지 */}
+          {message.messageType === 'FILE' && fileLink && (
+            isImageFile(fileLink) ? (
+              // ✅ 이미지 파일
+              <div className="max-w-[300px] max-h-[300px] mt-1 flex flex-col">
+                <img
+                  src={fileLink}
+                  alt={fileName}
+                  className="rounded-lg object-contain max-w-full max-h-[300px]"
+                />
+                <a
+                  href={fileLink}
+                  download={fileName}
+                  className="mt-1 inline-flex items-center gap-1 text-xs text-gray-600 border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 transition w-fit"
+                >
+                  <Download size={15} />
+                  다운로드
+                </a>
+              </div>
             ) : (
-              message.content
-            )}
-          </div>
-        )}
-
-        {/* 파일 메시지 */}
-        {message.messageType === 'FILE' && fileLink && (
-          isImageFile(fileLink) ? (
-            <div className="max-w-[300px] max-h-[300px]">
-              <img
-                src={fileLink}
-                alt={fileName}
-                className="rounded-lg object-contain max-w-full max-h-[300px]"
-              />
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <span>📎</span>
-              <span className="text-sm text-black break-all">{fileName}</span>
-              <a
-                href={fileLink}
-                download={fileName}
-                className="flex items-center gap-1 text-xs text-gray-600 border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 transition"
-              >
-                <Download size={15} />
-              </a>
-            </div>
-          )
-        )}
-      </div>
-
-      {/* 반응 버튼 */}
-      {hovered && (
-        <div className="absolute right-4 top-2 flex gap-2 text-gray-400">
-          <button>
-            <Smile size={16} />
-          </button>
-          <button>
-            <Bookmark size={16} />
-          </button>
+              // ✅ 일반 파일
+              <div className="flex flex-col mt-1">
+                <span className="text-sm break-all mb-1">{fileName}</span>
+                <a
+                  href={fileLink}
+                  download={fileName}
+                  className="flex items-center gap-1 text-xs text-gray-600 border border-gray-300 rounded px-2 py-1 hover:bg-gray-100 transition w-fit"
+                >
+                  <Download size={15} />
+                  다운로드
+                </a>
+              </div>
+            )
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
