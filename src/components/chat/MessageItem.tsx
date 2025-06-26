@@ -32,6 +32,9 @@ export default function MessageItem({ message, isGrouped }: Props) {
     minute: '2-digit',
   });
 
+  // ✅ 콘솔에서 name 확인용
+  console.log('sender name:', message.sender.name);
+
   return (
     <div
       className="relative flex items-start px-4 py-1 gap-2 hover:bg-gray-100 rounded-md transition group"
@@ -48,9 +51,10 @@ export default function MessageItem({ message, isGrouped }: Props) {
       )}
 
       <div className="flex flex-col">
+        {/* 이름은 항상 표시 */}
         {!isGrouped && (
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold text-gray-800">
+            <span className="text-sm font-semibold text-black">
               {message.sender.name}
             </span>
             <span className="text-xs text-gray-400">{timeString}</span>
@@ -58,9 +62,9 @@ export default function MessageItem({ message, isGrouped }: Props) {
         )}
 
         <div
-          className={`text-sm whitespace-pre-line leading-relaxed ${
-            isMine ? 'text-blue-800' : 'text-gray-900'
-          } ${isGrouped ? 'pl-[54px]' : 'mt-1'}`}
+          className={`text-sm whitespace-pre-line leading-relaxed text-black mt-1 ${
+            isGrouped ? 'pl-[42px]' : ''
+          }`}
         >
           {/* 텍스트 메시지 */}
           {message.messageType === 'TEXT' && message.content}

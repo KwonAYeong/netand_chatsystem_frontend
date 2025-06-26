@@ -14,7 +14,6 @@ interface Props {
   selectedRoomId?: number;
 }
 
-// ✅ ChatRoom 타입 통일 (Group & DM 공용)
 interface ChatRoom {
   chatRoomId: number;
   chatRoomName: string;
@@ -66,21 +65,26 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
     }
   }, [user, setChatRooms]);
 
-  // ✅ 1:1 채팅방 불러오기
+  // ✅ 1:1 채팅방 불러오기 (chatRoomType === 'DM' 필터링 포함)
   const fetchDmRooms = useCallback(async () => {
     if (!user) return;
     try {
       const res = await api.get(`/chat/dm/list/${user.userId}`);
 
-      const enriched = res.data.map((room: any) => ({
-        ...room,
-        chatRoomType: 'DM',
-        lastMessage: room.lastMessage ?? '',
-        hasUnreadMessage: room.hasUnreadMessage ?? false,
-        unreadMessageCount: room.unreadMessageCount ?? 0,
-      }));
+      const enriched: ChatRoom[] = res.data
+        .filter((room: any) => room.chatRoomType === 'DM') // ✅ DM만 필터링
+        .map((room: any) => ({
+          ...room,
+          lastMessage: room.lastMessage ?? '',
+          hasUnreadMessage: room.hasUnreadMessage ?? false,
+          unreadMessageCount: room.unreadMessageCount ?? 0,
+        }));
 
-      setDmRooms(enriched);
+      const unique: ChatRoom[] = Array.from(
+        new Map(enriched.map((r: ChatRoom) => [r.chatRoomId, r])).values()
+      );
+
+      setDmRooms(unique);
     } catch (err) {
       console.error('❌ DM 채팅방 목록 실패:', err);
     }
