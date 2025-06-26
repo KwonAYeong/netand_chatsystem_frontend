@@ -1,62 +1,77 @@
 import React, { useEffect, useRef } from 'react';
-import { connectSocket, subscribeToRoom, unsubscribeFromRoom, default as client } from '../../lib/websocket';
+import {
+  connectSocket,
+  subscribeToRoom,
+  unsubscribeFromRoom,
+  default as client,
+} from '../../lib/websocket';
 import UserAvatar from '../common/UserAvatar';
 import { useNavigate } from 'react-router-dom';
 import { useUserStatusContext } from '../../context/UserStatusContext';
-import { getUserStatusesByIds } from '../../api/profile'; // API 함수 추가
+import { getUserStatusesByIds } from '../../api/profile';
 import type { ChatRoom } from '../../types/chat';
 import useUserStatus from '../../hooks/useUserStatus';
 
 interface Props {
   currentUserId: number;
   selectedRoomId?: number | null;
-  setSelectedRoom: (room: { id: number; type: 'dm'; name: string; profileImage: string }) => void;
+  setSelectedRoom: (room: {
+    id: number;
+    type: 'dm';
+    name: string;
+    profileImage: string;
+  }) => void;
   dmRooms: ChatRoom[];
 }
 
-export default function ChatList({ currentUserId, selectedRoomId, setSelectedRoom, dmRooms }: Props) {
+export default function ChatList({
+  currentUserId,
+  selectedRoomId,
+  setSelectedRoom,
+  dmRooms,
+}: Props) {
   const navigate = useNavigate();
   const subscribedRef = useRef<Set<number>>(new Set());
-  const { subscribeUsers, unsubscribeUsers } = useUserStatusContext();
-  const { userStatuses, setUserStatuses } = useUserStatusContext();
+  const { subscribeUsers, unsubscribeUsers, userStatuses, setUserStatuses } =
+    useUserStatusContext();
 
   // 1. 채팅방에서 유저 ID 추출
   const userIds = dmRooms
-    .map((room) => room.receiverId)
+    .map((room) => room.userId)
     .filter((id): id is number => typeof id === 'number');
 
-  // 2. 초기 상태를 API에서 받아오기
-useEffect(() => {
-  const fetchUserStatuses = async () => {
-    // 이미 상태가 있을 경우 API 호출을 방지
-    if (Object.keys(userStatuses).length > 0) return;
+  // 2. 유저 상태 초기화 (새 유저 있을 때만 요청)
+  useEffect(() => {
+    const fetchedUserIds = Object.keys(userStatuses).map(Number);
+    const newIds = userIds.filter((id) => !fetchedUserIds.includes(id));
 
-    try {
-      const statusMap = await getUserStatusesByIds(userIds);
-      setUserStatuses((prev) => ({
-        ...prev,
-        ...statusMap,
-      }));
-    } catch (error) {
-      console.error('유저 상태를 받아오는 데 실패했습니다', error);
-    }
-  };
+    if (newIds.length === 0) return;
 
-  if (userIds.length > 0) {
+    const fetchUserStatuses = async () => {
+      try {
+        const statusMap = await getUserStatusesByIds(newIds);
+        setUserStatuses((prev) => ({
+          ...prev,
+          ...statusMap,
+        }));
+      } catch (error) {
+        console.error('유저 상태를 받아오는 데 실패했습니다', error);
+      }
+    };
+
     fetchUserStatuses();
-  }
-}, [userIds, userStatuses]); 
+  }, [userIds, userStatuses, setUserStatuses]);
 
   // 3. 실시간 상태 업데이트
-  useUserStatus(userIds, (userId, status) => {
+  useUserStatus(userIds, (userId: number, status: 'ONLINE' | 'AWAY') => {
     console.log(`📥 상태 수신: ${userId} → ${status}`);
     setUserStatuses((prev) => ({
       ...prev,
-      [userId]: status, // 실시간 상태 변경 처리
+      [userId]: status,
     }));
   });
 
-  // 4. WebSocket 구독
+  // 4. WebSocket 채팅방 구독
   useEffect(() => {
     const trySubscribe = () => {
       if (!client.connected) {
@@ -117,8 +132,8 @@ useEffect(() => {
                 size="sm"
                 showIsActive
                 finalStatus={
-                  typeof room.receiverId === 'number'
-                    ? userStatuses[room.receiverId] || 'AWAY'
+                  typeof room.userId === 'number'
+                    ? userStatuses[room.userId] || 'AWAY'
                     : 'AWAY'
                 }
               />

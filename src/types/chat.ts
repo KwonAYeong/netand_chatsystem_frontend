@@ -8,5 +8,5 @@ export interface ChatRoom {
   lastMessage: string;
   hasUnreadMessage: boolean;
   unreadMessageCount: number;
-  receiverId?: number;
+  userId?: number;
 }

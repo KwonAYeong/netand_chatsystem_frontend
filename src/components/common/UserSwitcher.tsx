@@ -26,7 +26,7 @@ const { subscribeUsers } = useUserStatusContext();
               key={id}
               onClick={async () => {
                 setShowList(false);
-                //disconnectSocket(); // 기존 연결 끊기
+                //disconnectSocket();
                 await new Promise(res => setTimeout(res, 300));
                 setUserById(id);     // 새 유저로 재연결 및 상태 갱신
               }}

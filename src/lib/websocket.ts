@@ -6,8 +6,7 @@ let socket: WebSocket | null = null;
 
 const client = new Client({
   webSocketFactory: () => {
-    socket = new SockJS('http://localhost:8080/ws');
-    return socket;
+    return new WebSocket('ws://localhost:8080/ws');
   },
   reconnectDelay: 5000,
   heartbeatIncoming: 4000,
@@ -17,7 +16,7 @@ const client = new Client({
 
 const subscriptions = new Map<string, StompSubscription>();
 
-export const connectSocket = (onConnected?: () => void) => {
+export const connectSocket = (onConnected?: () => void, userId?: number) => {
   console.log('🧪 connectSocket() 호출됨');
 
   if (client.connected || client.active) {
@@ -25,6 +24,9 @@ export const connectSocket = (onConnected?: () => void) => {
     onConnected?.();
     return;
   }
+  client.connectHeaders = {
+      userId: userId ? String(userId) : '',
+  };
 
   client.onConnect = () => {
     console.log('✅ WebSocket 연결 완료 (client.onConnect)');
@@ -241,7 +243,7 @@ export const subscribeWithRetry = (
 ) => {
   const isConnected = client.connected;
   const isSocketReady = !!(client as any)._connection;
-
+console.log(`📡 상태 구독 시도: /sub/status/${userId}`);
   if (isConnected && isSocketReady) {
     subscribeToStatus(userId, onStatus);
     console.log(`✅ 구독 성공: /sub/status/${userId}`);

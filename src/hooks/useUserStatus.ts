@@ -1,11 +1,8 @@
-import { useEffect, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   subscribeToStatus,
   unsubscribeFromStatus,
-  default as client,
-  connectAndSubscribeUsers,
 } from '../lib/websocket';
-import { subscribeWithRetry, waitUntilReady } from '../lib/websocket';
 
 export default function useUserStatus(
   userIds: number[],
@@ -13,20 +10,28 @@ export default function useUserStatus(
 ) {
   const subscribedRef = useRef<Set<number>>(new Set());
 
-  const stableUserIds = useMemo(
-    () => userIds.filter((id): id is number => typeof id === 'number'),
-    [userIds.join(',')] // 👉 문자열로 캐싱하면 비교 쉬움
-  );
+  useEffect(() => {
+    if (!userIds || userIds.length === 0) return;
 
-  const stableOnStatusUpdate = useCallback(onStatusUpdate, []);
+    const newIds = userIds.filter((id) => !subscribedRef.current.has(id));
+    const removedIds = Array.from(subscribedRef.current).filter(
+      (id) => !userIds.includes(id)
+    );
 
-useEffect(() => {
-  connectAndSubscribeUsers(stableUserIds, stableOnStatusUpdate);
+    console.log('🧪 useUserStatus → 구독 추가:', newIds, '해제:', removedIds);
 
-  return () => {
-    stableUserIds.forEach((id) => {
-      unsubscribeFromStatus(id);
+    // 새로 추가된 ID 구독
+    newIds.forEach((id) => {
+      subscribeToStatus(id, onStatusUpdate);
+      subscribedRef.current.add(id);
     });
-  };
-}, [stableUserIds, stableOnStatusUpdate]);
+
+    // 빠진 ID 해제
+    removedIds.forEach((id) => {
+      unsubscribeFromStatus(id);
+      subscribedRef.current.delete(id);
+    });
+
+    // cleanup (전체 제거는 안 함)
+  }, [userIds, onStatusUpdate]);
 }

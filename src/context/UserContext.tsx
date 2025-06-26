@@ -12,10 +12,10 @@ import React, {
 import { getUserProfileById } from '../api/profile';
 import type { User } from '../types/user';
 import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
+//import SockJS from 'sockjs-client';
 import { setOnline } from '../lib/websocket';
 import { useUserStatusContext } from './UserStatusContext';
-
+import { waitUntilReady } from '../lib/websocket';
 interface UserContextValue {
   user: User | null;
   setUser: Dispatch<SetStateAction<User | null>>;
@@ -62,7 +62,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       // ✅ 새 클라이언트 생성
       client = new Client({
-        webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+        webSocketFactory: () => new WebSocket('ws://localhost:8080/ws'),
         connectHeaders: {
           userId: String(formattedUser.userId), // ✅ 서버가 받을 수 있도록 userId 전달
         },
@@ -72,10 +72,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
           console.log('✅ WebSocket 연결됨');
           setWsConnected(true);
 
-          if (formattedUser.isActive) {
-            setOnline(formattedUser.userId);
-            console.log('🟢 ONLINE 상태 전송');
-          }
+            waitUntilReady(() => {
+            if (formattedUser.isActive) {
+              setOnline(formattedUser.userId);
+              console.log('🟢 ONLINE 상태 전송');
+            }
+          });
         },
         onDisconnect: () => {
           console.log('🧹 WebSocket 연결 종료됨');

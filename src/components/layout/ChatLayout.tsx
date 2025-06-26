@@ -43,7 +43,7 @@ const ChatLayout = () => {
       .then((res) => {
         const patchedRooms = res.data.map((room: any) => ({
           ...room,
-          receiverId: room.userId, // ✅ 이렇게 추가
+          userId: room.userId, // ✅ 이렇게 추가
         }));
         setDmRooms(patchedRooms);
       })
