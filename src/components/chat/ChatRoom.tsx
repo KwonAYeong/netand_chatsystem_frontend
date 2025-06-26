@@ -109,6 +109,7 @@ export default function ChatRoom({
 
   // 메시지 전송
   const handleSend = async (text: string, file?: File) => {
+    if(!user) return;
     try {
       let fileUrl: string | undefined;
 
@@ -129,8 +130,8 @@ export default function ChatRoom({
         id: Date.now(), // 임시 ID
         chatRoomId,
         sender: {
-          id: userId,
-          name: '나',
+          id: user.userId,
+          name: user.name?? '이름없음',
           profileImageUrl: user?.profileImageUrl || '/default-profile.png',
         },
         content: text,

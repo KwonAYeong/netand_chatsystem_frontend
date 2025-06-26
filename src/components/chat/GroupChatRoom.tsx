@@ -153,7 +153,7 @@ export default function GroupChatRoom({
         chatRoomId: roomId,
         sender: {
           id: currentUser.id,
-          name: currentUser.nickname ?? '나',
+          name: user?.name?? '이름없음',
           profileImageUrl: user?.profileImageUrl || '/default-profile.png',
         },
         content: text,
