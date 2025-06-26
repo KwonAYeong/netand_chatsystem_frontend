@@ -56,12 +56,11 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
     }
   }, [user, setChatRooms]);
 
-  // ✅ 1:1 채팅방 불러오기
+  // ✅ 1:1 채팅방 불러오기 (chatRoomType === 'DM' 필터링 포함)
   const fetchDmRooms = useCallback(async () => {
     if (!user) return;
     try {
       const res = await api.get(`/chat/dm/list/${user.userId}`);
-
       const enriched: ChatRoom[] = res.data
         .filter((room: any) => room.chatRoomType === 'DM') // ✅ DM만 필터링
         .map((room: any) => ({

@@ -12,6 +12,7 @@ export const transform = (res: any): Message => ({
   messageType: res.messageType === 'FILE' ? 'FILE' : 'TEXT',
   fileUrl: res.fileUrl || '',
   createdAt: res.createdAt ?? new Date().toISOString(),
+  mentionedUserNames: res.mentionedUserNames ?? [],
 });
 
 

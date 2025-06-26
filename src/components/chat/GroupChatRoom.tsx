@@ -67,7 +67,7 @@ export default function GroupChatRoom({
 
   const handleIncomingMessage = (data: any) => {
     const newMessage = transform(data);
-
+console.log('📦 WebSocket 수신 원본:', data);
     setMessages((prev: Message[]) => {
       const map = new Map<number, Message>(prev.map((m) => [m.id, m]));
       map.set(newMessage.id, newMessage);
@@ -100,6 +100,7 @@ export default function GroupChatRoom({
   useEffect(() => {
     getMessages(roomId)
       .then((res) => {
+        console.log('📦 메시지 불러오기 응답:', res.data);
         const transformed = res.data.map(transform);
         const sorted = transformed.sort(
           (a: Message, b: Message) =>
@@ -125,7 +126,7 @@ export default function GroupChatRoom({
     return res.data.fileUrl;
   };
 
-  const handleSend = async (text: string, file?: File) => {
+  const handleSend = async (text: string, file?: File,mentionedUserNames: string[] = []) => {
     try {
       let fileUrl: string | undefined;
 
@@ -140,6 +141,7 @@ export default function GroupChatRoom({
         content: text,
         messageType: file ? 'FILE' : 'TEXT',
         fileUrl,
+        mentionedUserNames,
       };
 
       const tempMessage: Message = {
@@ -147,13 +149,14 @@ export default function GroupChatRoom({
         chatRoomId: roomId,
         sender: {
           id: currentUser.id,
-           name: user?.name?? '이름없음',
+          name: user?.name?? '이름없음',
           profileImageUrl: user?.profileImageUrl || '/default-profile.png',
         },
         content: text,
         messageType: file ? 'FILE' : 'TEXT',
         fileUrl,
         createdAt: now,
+        mentionedUserNames,
       };
 
       setMessages((prev) => [...prev, tempMessage]);
@@ -194,7 +197,7 @@ export default function GroupChatRoom({
         <MessageList messages={messages} bottomRef={bottomRef} />
       </div>
 
-      <MessageInput onSend={handleSend} />
+      <MessageInput onSend={handleSend} chatRoomId={roomId}/>
 
       {showMembers && (
         <MemberListModal members={members} onClose={() => setShowMembers(false)} />

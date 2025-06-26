@@ -50,7 +50,7 @@ export default function MessageList({ messages, bottomRef }: Props) {
           Math.abs(
             new Date(msg.createdAt).getTime() -
               new Date(prev.createdAt).getTime()
-          ) < 10 * 60 * 1000; // 10분 이내 같은 사람 → 그룹으로 묶음
+          ) < 1 * 60 * 1000; // 1분 이내 같은 사람 → 그룹으로 묶음
 
         return (
           <React.Fragment key={msg.id}>
@@ -61,8 +61,8 @@ export default function MessageList({ messages, bottomRef }: Props) {
                 </div>
               </div>
             )}
-
-            <MessageItem message={msg} isGrouped={!!isGrouped} />
+            <div className={isGrouped ? 'mt-1' : 'mt-4'}>
+            <MessageItem message={msg} isGrouped={!!isGrouped} /></div>
           </React.Fragment>
         );
       })}

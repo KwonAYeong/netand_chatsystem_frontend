@@ -14,4 +14,5 @@ export interface Message {
 
   // ✅ 메시지 타입 추가
   messageType: 'TEXT' | 'FILE';
+  mentionedUserNames?: string[];
 }
