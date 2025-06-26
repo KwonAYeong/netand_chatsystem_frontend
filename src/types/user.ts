@@ -9,4 +9,5 @@ export type User = {
   createdAt: string;
   updatedAt: string;
   nickname?: string;
+  status?: 'ONLINE' | 'AWAY'
 };

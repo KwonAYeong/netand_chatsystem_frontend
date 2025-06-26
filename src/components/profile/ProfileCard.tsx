@@ -2,44 +2,51 @@ import { Mail, Building2, BadgeCheck } from 'lucide-react';
 import UserAvatar from '../common/UserAvatar';
 import UserisActiveBadge from '../common/UserStatusBadge';
 import IsActiveToggle from './IsActiveToggle';
-
-interface User {
-  name: string;
-  email: string;
-  company: string;
-  position: string;
-  profileImageUrl: string;
-  isActive: boolean;
-}
-
+import { setOnline, setAway } from '../../lib/websocket'; // ✅ 상태 전송 함수
+import type { User } from '../../types/user';
+import { useUser } from '../../context/UserContext';
 interface ProfileCardProps {
   user: User;
-  onisActiveChange: (isActive: boolean) => void;
+  onIsActiveChange: (isActive: boolean) => void;
 }
 
-const ProfileCard = ({ user, onisActiveChange }: ProfileCardProps) => {
+const ProfileCard = ({ user, onIsActiveChange }: ProfileCardProps) => {
+  const { wsConnected } = useUser(); 
+  console.log('👤 내 상태', {
+  isActive: user.isActive,
+  wsConnected,
+  최종: user.isActive && wsConnected,
+});
+  const handleIsActiveChange = (value: boolean) => {
+    onIsActiveChange(value);
+  };
+
   return (
     <div className="flex flex-col h-full p-6 bg-white">
       {/* 상단 아바타 */}
       <div className="flex flex-col items-center gap-4">
         <UserAvatar
           src={user.profileImageUrl}
-          isActive={user.isActive}
+          finalStatus={user.isActive && wsConnected ? 'ONLINE' : 'AWAY'}
           size="xl"
-          showIsActive={false}
         />
 
         {/* 이름 + 상태설정 */}
         <div className="flex justify-between items-center w-full mt-4">
           <div className="flex items-center gap-2">
             <p className="text-xl font-bold">{user.name}</p>
-            <UserisActiveBadge isActive={user.isActive} size={10} withText />
+            <UserisActiveBadge
+              isSelf
+              isActive={user.isActive}
+              wsConnected={wsConnected}
+              size={10}
+              withText
+            />
           </div>
 
-          {/* ✅ 상태 토글 버튼 (디자인 유지) */}
           <IsActiveToggle
             isActive={user.isActive}
-            onChange={onisActiveChange}
+            onChange={handleIsActiveChange}
             compact
           />
         </div>

@@ -6,18 +6,24 @@ import {
   Navigate,
   useNavigate,
 } from 'react-router-dom';
-
+import { UserStatusProvider } from './context/UserStatusContext';
 import { UserProvider, useUser } from './context/UserContext';
 import { NotificationSettingsProvider, useNotificationSettings } from './context/NotificationSettingsContext';
 import { useSSEWithNotification } from './hooks/useSSEWithNotification';
 import { ChatUIProvider } from './context/ChatUIContext';
 import ChatRoutes from './routes/chatRoutes';
-
+import { connectSocket } from './lib/websocket';
 const App = () => {
+  useEffect(() => {
+    console.log('✅ [WebSocket] onConnect 실행됨!');
+    connectSocket(); 
+  }, []);
   return (
     <Router>
       <UserProvider>
-        <NotificationSettingsProviderWrapper />
+        <UserStatusProvider>
+          <NotificationSettingsProviderWrapper />
+        </UserStatusProvider>
       </UserProvider>
     </Router>
   );

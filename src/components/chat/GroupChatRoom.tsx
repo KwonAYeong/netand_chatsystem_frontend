@@ -80,7 +80,7 @@ export default function GroupChatRoom({
     scrollToBottom();
   };
 
-  const { sendMessage, connectWebSocket, disconnectWebSocket } = useWebSocket({
+  const { sendMessage } = useWebSocket({
     roomId,
     onMessage: handleIncomingMessage,
     activeRoomId: roomId,
@@ -88,12 +88,6 @@ export default function GroupChatRoom({
     onUnreadClear,
   });
 
-  useEffect(() => {
-    connectWebSocket();
-    return () => {
-      disconnectWebSocket();
-    };
-  }, [roomId]);
 
   useEffect(() => {
     setSelectedRoom({
@@ -153,7 +147,7 @@ export default function GroupChatRoom({
         chatRoomId: roomId,
         sender: {
           id: currentUser.id,
-          name: currentUser.nickname ?? '나',
+           name: user?.name?? '이름없음',
           profileImageUrl: user?.profileImageUrl || '/default-profile.png',
         },
         content: text,

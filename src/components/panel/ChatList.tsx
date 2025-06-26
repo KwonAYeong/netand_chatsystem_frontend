@@ -1,50 +1,62 @@
-// src/components/sidebar/ChatList.tsx
 import React, { useEffect, useRef } from 'react';
-import {
-  connectSocket,
-  subscribeToRoom,
-  unsubscribeFromRoom,
-  default as client,
-} from '../../lib/websocket';
+import { connectSocket, subscribeToRoom, unsubscribeFromRoom, default as client } from '../../lib/websocket';
 import UserAvatar from '../common/UserAvatar';
 import { useNavigate } from 'react-router-dom';
-
-interface ChatRoom {
-  chatRoomId: number;
-  chatRoomName: string;
-  chatRoomType: string;
-  receiverProfileImage: string;
-  lastMessage: string;
-  hasUnreadMessage: boolean;
-  unreadMessageCount: number;
-  receiverEmail?: string;
-}
+import { useUserStatusContext } from '../../context/UserStatusContext';
+import { getUserStatusesByIds } from '../../api/profile'; // API 함수 추가
+import type { ChatRoom } from '../../types/chat';
+import useUserStatus from '../../hooks/useUserStatus';
 
 interface Props {
   currentUserId: number;
   selectedRoomId?: number | null;
-  setSelectedRoom: (room: {
-    id: number;
-    type: 'dm';
-    name: string;
-    profileImage: string;
-  }) => void;
+  setSelectedRoom: (room: { id: number; type: 'dm'; name: string; profileImage: string }) => void;
   dmRooms: ChatRoom[];
 }
 
-export default function ChatList({
-  currentUserId,
-  selectedRoomId,
-  setSelectedRoom,
-  dmRooms,
-}: Props) {
+export default function ChatList({ currentUserId, selectedRoomId, setSelectedRoom, dmRooms }: Props) {
   const navigate = useNavigate();
   const subscribedRef = useRef<Set<number>>(new Set());
+  const { subscribeUsers, unsubscribeUsers } = useUserStatusContext();
+  const { userStatuses, setUserStatuses } = useUserStatusContext();
 
-  useEffect(() => {
-    connectSocket();
-  }, []);
+  // 1. 채팅방에서 유저 ID 추출
+  const userIds = dmRooms
+    .map((room) => room.receiverId)
+    .filter((id): id is number => typeof id === 'number');
 
+  // 2. 초기 상태를 API에서 받아오기
+useEffect(() => {
+  const fetchUserStatuses = async () => {
+    // 이미 상태가 있을 경우 API 호출을 방지
+    if (Object.keys(userStatuses).length > 0) return;
+
+    try {
+      const statusMap = await getUserStatusesByIds(userIds);
+      setUserStatuses((prev) => ({
+        ...prev,
+        ...statusMap,
+      }));
+    } catch (error) {
+      console.error('유저 상태를 받아오는 데 실패했습니다', error);
+    }
+  };
+
+  if (userIds.length > 0) {
+    fetchUserStatuses();
+  }
+}, [userIds, userStatuses]); 
+
+  // 3. 실시간 상태 업데이트
+  useUserStatus(userIds, (userId, status) => {
+    console.log(`📥 상태 수신: ${userId} → ${status}`);
+    setUserStatuses((prev) => ({
+      ...prev,
+      [userId]: status, // 실시간 상태 변경 처리
+    }));
+  });
+
+  // 4. WebSocket 구독
   useEffect(() => {
     const trySubscribe = () => {
       if (!client.connected) {
@@ -74,6 +86,7 @@ export default function ChatList({
     };
   }, [dmRooms, selectedRoomId]);
 
+  // 5. 채팅방 선택
   const handleSelectRoom = (room: ChatRoom) => {
     setSelectedRoom({
       id: room.chatRoomId,
@@ -81,7 +94,6 @@ export default function ChatList({
       name: room.chatRoomName,
       profileImage: room.receiverProfileImage,
     });
-
     navigate(`/chat/${room.chatRoomId}`);
   };
 
@@ -104,6 +116,11 @@ export default function ChatList({
                 alt={`${room.chatRoomName} 프로필`}
                 size="sm"
                 showIsActive
+                finalStatus={
+                  typeof room.receiverId === 'number'
+                    ? userStatuses[room.receiverId] || 'AWAY'
+                    : 'AWAY'
+                }
               />
               <span>{room.chatRoomName}</span>
               {room.unreadMessageCount > 0 && (

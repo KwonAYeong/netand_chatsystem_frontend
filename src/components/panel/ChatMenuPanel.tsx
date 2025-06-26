@@ -7,23 +7,13 @@ import InviteUser from './InviteUser';
 import { useUser } from '../../context/UserContext';
 import { useChatUI } from '../../context/ChatUIContext';
 import { api } from '../../api/axios';
-
+import type { ChatRoom } from '../../types/chat';
 interface Props {
   currentUserId: number;
   unreadCounts?: Record<number, number>;
   selectedRoomId?: number;
 }
 
-// ✅ ChatRoom 타입 통일 (Group & DM 공용)
-interface ChatRoom {
-  chatRoomId: number;
-  chatRoomName: string;
-  chatRoomType: string;
-  receiverProfileImage: string;
-  lastMessage: string;
-  hasUnreadMessage: boolean;
-  unreadMessageCount: number;
-}
 
 export default function ChatMenuPanel({ currentUserId }: Props) {
   const { user } = useUser();
@@ -72,15 +62,20 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
     try {
       const res = await api.get(`/chat/dm/list/${user.userId}`);
 
-      const enriched = res.data.map((room: any) => ({
-        ...room,
-        chatRoomType: 'DM',
-        lastMessage: room.lastMessage ?? '',
-        hasUnreadMessage: room.hasUnreadMessage ?? false,
-        unreadMessageCount: room.unreadMessageCount ?? 0,
-      }));
+      const enriched: ChatRoom[] = res.data
+        .filter((room: any) => room.chatRoomType === 'DM') // ✅ DM만 필터링
+        .map((room: any) => ({
+          ...room,
+          lastMessage: room.lastMessage ?? '',
+          hasUnreadMessage: room.hasUnreadMessage ?? false,
+          unreadMessageCount: room.unreadMessageCount ?? 0,
+        }));
 
-      setDmRooms(enriched);
+      const unique: ChatRoom[] = Array.from(
+        new Map(enriched.map((r: ChatRoom) => [r.chatRoomId, r])).values()
+      );
+
+      setDmRooms(unique);
     } catch (err) {
       console.error('❌ DM 채팅방 목록 실패:', err);
     }
