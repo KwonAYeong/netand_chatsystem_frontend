@@ -31,6 +31,8 @@ export default function MessageItem({ message, isGrouped }: Props) {
   const timeString = new Date(message.createdAt).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
+    timeZone: 'Asia/Seoul'
   });
 
 
