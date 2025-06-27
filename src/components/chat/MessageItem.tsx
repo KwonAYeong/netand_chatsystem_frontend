@@ -35,6 +35,7 @@ export default function MessageItem({ message, isGrouped }: Props) {
     setShowProfile?.(true);
   };
 
+
   const timeString = dayjs(message.createdAt).format('HH:mm');
 
 
@@ -71,6 +72,7 @@ export default function MessageItem({ message, isGrouped }: Props) {
 
   return (
     <div
+      id={`message-${message.id}`}
       className="relative flex items-start px-4 py-1 gap-2 rounded-md transition group hover:bg-gray-100"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

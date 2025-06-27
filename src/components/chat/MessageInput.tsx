@@ -42,8 +42,12 @@ export default function MessageInput({ onSend, chatRoomId, hasMention = true }: 
     const trimmed = text.trim();
     if (!trimmed && !selectedFile) return;
 
-    onSend(trimmed, selectedFile ?? undefined, mentionedUserNames);
+  const validMentionedNames = mentionedUserNames.filter((name) =>
+    trimmed.includes(`@${name}`)
+  );
 
+    // ✅ onSend에는 진짜 언급된 사람만 넘김
+    onSend(trimmed, selectedFile ?? undefined, validMentionedNames);
     setText('');
     setSelectedFile(null);
     setMentionedUserNames([]);

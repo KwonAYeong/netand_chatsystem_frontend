@@ -1,60 +1,103 @@
+// src/components/activity/ActivityPanel.tsx
+import { JSX, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaAt } from 'react-icons/fa';
 import UserAvatar from '../common/UserAvatar';
-import { FaAt } from "react-icons/fa";
+import { getMentionActivities } from '../../api/myActivity';
+import { useUser } from '../../context/UserContext';
+import { SVGProps } from 'react';
 
-const AtIcon = FaAt as unknown as React.FC<React.SVGProps<SVGSVGElement>>;
+const AtIcon = FaAt as React.FC<SVGProps<SVGSVGElement>>;
 
-interface ActivityItem {
-  id: string;
-  channelName: string;
-  date: string;
-  sender: string;
-  senderAvatar: string;
-  mentionTarget: string;
-  message: string;
+interface MentionActivity {
+  messageId: number;
   chatRoomId: number;
-  messageId: string;
+  chatRoomName: string;
+  senderName: string;
+  senderProfileImageUrl: string;
+  content: string;
+  createdAt: string;
 }
 
-const dummyActivities: ActivityItem[] = [
-  {
-    id: '1',
-    channelName: '#채널2',
-    date: '5월 28일',
-    sender: '권아영',
-    senderAvatar: '/avatars/user1.png',
-    mentionTarget: '신재윤',
-    message: '오늘 회의 자료 확인 부탁드려요!',
-    chatRoomId: 2,
-    messageId: 'msg-1',
-  },
-];
-
 const ActivityPanel = () => {
+  const { user } = useUser();
   const navigate = useNavigate();
+  const [mentions, setMentions] = useState<MentionActivity[]>([]);
+// 유틸 함수: 멘션된 본인 이름에 하이라이팅 적용
+const highlightMention = (content: string, name: string) => {
+  const regex = new RegExp(`@${name}(?=\\s|$)`, 'gi');
+  const result: (string | JSX.Element)[] = [];
+
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(content)) !== null) {
+    const start = match.index!;
+    const end = start + match[0].length;
+
+    if (start > lastIndex) {
+      result.push(content.slice(lastIndex, start));
+    }
+
+    result.push(
+      <span
+        key={start}
+        className="bg-blue-100 text-blue-800 font-semibold px-1 rounded"
+      >
+        {match[0]}
+      </span>
+    );
+
+    lastIndex = end;
+  }
+
+  if (lastIndex < content.length) {
+    result.push(content.slice(lastIndex));
+  }
+
+  return result;
+};
+
+  useEffect(() => {
+    if (!user) return;
+
+    getMentionActivities(user.userId)
+      .then((data) => {
+        setMentions(data);
+      })
+      .catch((err) => {
+        console.error('❌ 멘션 내역 불러오기 실패:', err);
+      });
+  }, [user]);
 
   return (
     <aside className="w-80 bg-white border-r border-gray-200 p-4 overflow-y-auto">
       <h2 className="text-lg font-bold mb-3">내 활동</h2>
 
       <ul className="space-y-3">
-        {dummyActivities.map((item) => (
+        {mentions.map((item) => (
           <li
-            key={item.id}
-            onClick={() => navigate(`/chat?room=${item.chatRoomId}&message=${item.messageId}`)}
-            className="bg-gray-50 hover:bg-gray-100 p-3 rounded-md cursor-pointer"
+            key={item.messageId}
+            onClick={() => navigate(`/chat/${item.chatRoomId}?message=${item.messageId}`)}
+            className="bg-white hover:bg-gray-100 border border-gray-200 p-3 rounded-md cursor-pointer shadow-sm"
           >
-            <p className="text-xs text-gray-500 mb-1">
-              <AtIcon className="inline mr-1" />
-              @{item.mentionTarget} — {item.channelName} 에서 멘션
-              <span className="float-right">{item.date}</span>
-            </p>
-            <div className="flex gap-3 items-start">
-              <UserAvatar src={item.senderAvatar} size="md" />
+            {/* 상단 정보 */}
+            <div className="flex justify-between items-center text-xs text-gray-500 mb-1">
+              <div>
+                <AtIcon className="inline mr-1 text-gray-400" />
+                <span className="text-gray-600">{item.chatRoomName} 에서 멘션</span>
+              </div>
+              <span>{item.createdAt}</span>
+            </div>
+
+            {/* 보낸 사람 + 메시지 */}
+            <div className="flex gap-3 items-start mt-1">
+              <UserAvatar src={item.senderProfileImageUrl} size="md" />
               <div className="text-sm">
-                <p className="font-semibold text-gray-800">{item.sender}</p>
-                <p className="text-blue-500 text-xs font-medium">@{item.mentionTarget}</p>
-                <p className="text-gray-700 text-sm mt-1">{item.message}</p>
+                <p className="font-semibold text-gray-800">{item.senderName}</p>
+                <p className="text-gray-700 whitespace-pre-line mt-1">
+                  {highlightMention(item.content, user?.name || '')}
+                </p>
               </div>
             </div>
           </li>
