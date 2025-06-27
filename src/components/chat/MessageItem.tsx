@@ -35,8 +35,8 @@ export default function MessageItem({ message, isGrouped }: Props) {
     setShowProfile?.(true);
   };
 
-  // ✅ Asia/Seoul 기준으로 시간 변환 (예: "13:45")
-  const timeString = dayjs.utc(message.createdAt).tz('Asia/Seoul').format('HH:mm');
+  const timeString = dayjs(message.createdAt).format('HH:mm');
+
 
   function highlightMentions(text: string, mentionedNames: string[] = []) {
     let result: React.ReactNode[] = [];
