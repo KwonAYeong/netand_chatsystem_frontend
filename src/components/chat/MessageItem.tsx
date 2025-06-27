@@ -28,12 +28,12 @@ export default function MessageItem({ message, isGrouped }: Props) {
     setShowProfile?.(true);
   };
 
-  const timeString = new Date(message.createdAt).toLocaleTimeString([], {
+  const timeString = new Intl.DateTimeFormat('ko-KR', {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false,
-    timeZone: 'Asia/Seoul'
-  });
+    hour12: true,
+    timeZone: 'Asia/Seoul',
+  }).format(new Date(message.createdAt));
 
 
 function highlightMentions(text: string, mentionedNames: string[] = []) {
