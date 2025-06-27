@@ -4,6 +4,13 @@ import { useUser } from '../../context/UserContext';
 import { useChatUI } from '../../context/ChatUIContext';
 import { Download } from 'lucide-react';
 
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 interface Props {
   message: Message;
   isGrouped: boolean;
@@ -28,48 +35,39 @@ export default function MessageItem({ message, isGrouped }: Props) {
     setShowProfile?.(true);
   };
 
-  const timeString = new Intl.DateTimeFormat('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: 'Asia/Seoul',
-  }).format(new Date(message.createdAt));
+  // ✅ Asia/Seoul 기준으로 시간 변환 (예: "13:45")
+  const timeString = dayjs.utc(message.createdAt).tz('Asia/Seoul').format('HH:mm');
 
+  function highlightMentions(text: string, mentionedNames: string[] = []) {
+    let result: React.ReactNode[] = [];
+    let lastIndex = 0;
 
-function highlightMentions(text: string, mentionedNames: string[] = []) {
-  let result: React.ReactNode[] = [];
-  let lastIndex = 0;
+    const mentionRegex = new RegExp(`@(${mentionedNames.join('|')})`, 'g');
 
-  // 멘션 이름들을 @이름 형식으로 정렬
-  const mentionRegex = new RegExp(`@(${mentionedNames.join('|')})`, 'g');
+    let match: RegExpExecArray | null;
+    while ((match = mentionRegex.exec(text)) !== null) {
+      const start = match.index;
+      const end = match.index + match[0].length;
 
-  let match: RegExpExecArray | null;
-  while ((match = mentionRegex.exec(text)) !== null) {
-    const start = match.index;
-    const end = match.index + match[0].length;
+      if (start > lastIndex) {
+        result.push(text.slice(lastIndex, start));
+      }
 
-    // 일반 텍스트 추가
-    if (start > lastIndex) {
-      result.push(text.slice(lastIndex, start));
+      result.push(
+        <span key={start} className="bg-blue-200 text-blue-500 px-1 rounded font-bold">
+          {match[0]}
+        </span>
+      );
+
+      lastIndex = end;
     }
 
-    // 멘션 강조
-    result.push(
-      <span key={start} className="bg-blue-200 text-blue-500 px-1 rounded font-bold">
-        {match[0]}
-      </span>
-    );
+    if (lastIndex < text.length) {
+      result.push(text.slice(lastIndex));
+    }
 
-    lastIndex = end;
+    return result;
   }
-
-  // 나머지 텍스트
-  if (lastIndex < text.length) {
-    result.push(text.slice(lastIndex));
-  }
-
-  return result;
-}
 
   return (
     <div
@@ -87,7 +85,6 @@ function highlightMentions(text: string, mentionedNames: string[] = []) {
       )}
 
       <div className="flex flex-col">
-        {/* 이름은 항상 표시 */}
         {!isGrouped && (
           <div className="flex items-baseline gap-2">
             <span className="text-sm font-semibold text-black">
@@ -102,14 +99,11 @@ function highlightMentions(text: string, mentionedNames: string[] = []) {
             isGrouped ? 'pl-[42px]' : ''
           }`}
         >
-          {/* 텍스트 메시지 */}
           {message.messageType === 'TEXT' &&
             highlightMentions(message.content, message.mentionedUserNames)}
 
-          {/* 파일 메시지 */}
           {message.messageType === 'FILE' && fileLink && (
             isImageFile(fileLink) ? (
-              // ✅ 이미지 파일
               <div className="max-w-[300px] max-h-[300px] mt-1 flex flex-col">
                 <img
                   src={fileLink}
@@ -126,7 +120,6 @@ function highlightMentions(text: string, mentionedNames: string[] = []) {
                 </a>
               </div>
             ) : (
-              // ✅ 일반 파일
               <div className="flex flex-col mt-1">
                 <span className="text-sm break-all mb-1">{fileName}</span>
                 <a
