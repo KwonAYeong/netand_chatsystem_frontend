@@ -22,10 +22,6 @@ export default function MessageItem({ message, isGrouped }: Props) {
   const fileLink = message.fileUrl || message.content;
   const fileName = decodeURIComponent(fileLink?.split('/').pop() || '파일');
   const isMentioned = message.mentionedUserNames?.includes(user?.name || '');
-console.log('🟢 내 이름:', user?.name);
-console.log('📣 멘션 대상들:', message.mentionedUserNames);
-console.log('✅ isMentioned:', isMentioned);
-console.log('🧾 수신 메시지 전체:', message);
 
   const handleAvatarClick = () => {
     setSelectedUser?.({ userId: message.sender.id });
@@ -37,8 +33,7 @@ console.log('🧾 수신 메시지 전체:', message);
     minute: '2-digit',
   });
 
-  // ✅ 콘솔에서 name 확인용
-  console.log('sender name:', message.sender.name);
+
 function highlightMentions(text: string, mentionedNames: string[] = []) {
   let result: React.ReactNode[] = [];
   let lastIndex = 0;

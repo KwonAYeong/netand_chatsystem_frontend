@@ -1,8 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import {
-  connectSocket,
   subscribeToRoom,
-  unsubscribeFromRoom,
   default as client,
 } from '../../lib/websocket';
 import UserAvatar from '../common/UserAvatar';
@@ -11,6 +9,7 @@ import { useUserStatusContext } from '../../context/UserStatusContext';
 import { getUserStatusesByIds } from '../../api/profile';
 import type { ChatRoom } from '../../types/chat';
 import useUserStatus from '../../hooks/useUserStatus';
+import { useChatUI } from '../../context/ChatUIContext';
 
 interface Props {
   currentUserId: number;
@@ -22,6 +21,9 @@ interface Props {
     profileImage: string;
   }) => void;
   dmRooms: ChatRoom[];
+  onUnreadIncrease: (roomId: number) => void;
+  onUnreadClear: (roomId: number) => void;
+  unreadCounts: Record<number, number>;
 }
 
 export default function ChatList({
@@ -29,8 +31,13 @@ export default function ChatList({
   selectedRoomId,
   setSelectedRoom,
   dmRooms,
+  onUnreadIncrease,
+  onUnreadClear,
+  unreadCounts,
 }: Props) {
   const navigate = useNavigate();
+    const { selectedRoom } = useChatUI();  // ✅ 가장 최신 선택 채팅방 정보
+  const currentChatRoomId = selectedRoom?.type === 'dm' ? selectedRoom.id : -1;
   const subscribedRef = useRef<Set<number>>(new Set());
   const { subscribeUsers, unsubscribeUsers, userStatuses, setUserStatuses } =
     useUserStatusContext();
@@ -71,7 +78,7 @@ export default function ChatList({
     }));
   });
 
-  // 4. WebSocket 채팅방 구독
+  // 4. WebSocket 채팅방 구본 (한 번만, 해제 없음)
   useEffect(() => {
     const trySubscribe = () => {
       if (!client.connected) {
@@ -84,9 +91,10 @@ export default function ChatList({
           subscribeToRoom(
             room.chatRoomId,
             () => {},
-            () => {},
-            () => {},
-            selectedRoomId || -1
+            onUnreadIncrease,  // ✅ 읽지 않은 메시지 증가
+            onUnreadClear,     // ✅ 현재 방이면 읽음 처리
+            currentChatRoomId,
+            currentUserId 
           );
           subscribedRef.current.add(room.chatRoomId);
         }
@@ -94,12 +102,7 @@ export default function ChatList({
     };
 
     trySubscribe();
-
-    return () => {
-      subscribedRef.current.forEach((roomId) => unsubscribeFromRoom(roomId));
-      subscribedRef.current.clear();
-    };
-  }, [dmRooms, selectedRoomId]);
+  }, [dmRooms, currentChatRoomId]); // ✅ selectedRoomId 제거, 재구독 막기 위해
 
   // 5. 채팅방 선택
   const handleSelectRoom = (room: ChatRoom) => {
@@ -128,7 +131,7 @@ export default function ChatList({
             >
               <UserAvatar
                 src={room.receiverProfileImage || '/default_profile.jpg'}
-                alt={`${room.chatRoomName} 프로필`}
+                alt={`${room.chatRoomName} 프리필`}
                 size="sm"
                 showIsActive
                 finalStatus={
@@ -140,7 +143,7 @@ export default function ChatList({
               <span>{room.chatRoomName}</span>
               {room.unreadMessageCount > 0 && (
                 <span className="absolute right-2 top-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
-                  {room.unreadMessageCount}
+                  {unreadCounts[room.chatRoomId]}
                 </span>
               )}
             </button>

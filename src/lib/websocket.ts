@@ -17,7 +17,6 @@ const client = new Client({
 const subscriptions = new Map<string, StompSubscription>();
 
 export const connectSocket = (onConnected?: () => void, userId?: number) => {
-  console.log('🧪 connectSocket() 호출됨');
 
   if (client.connected || client.active) {
     console.log('⚠️ WebSocket 이미 연결됨 또는 연결 시도 중');
@@ -72,7 +71,8 @@ export const subscribeToRoom = (
   onMessage: (msg: any) => void,
   onUnreadIncrease: (roomId: number) => void,
   onUnreadClear: (roomId: number) => void,
-  currentChatRoomId: number
+  currentChatRoomId: number,
+  currentUserId: number  
 ) => {
   
   const destination = `/sub/chatroom/${chatRoomId}`;
@@ -81,23 +81,36 @@ export const subscribeToRoom = (
     console.log(`⚠️ Already subscribed to ${destination}`);
     return;
   }
- if (!client.connected || !(client as any)._connection) {
-    console.warn(`❌ STOMP 연결 안 됨 — ${destination} 구독 취소`);
-    return;
-  }
-  const sub = client.subscribe(destination, (message: IMessage) => {
-    const parsed = JSON.parse(message.body);
-    onMessage(parsed);
+  waitUntilReady(() => {
+    console.log(`🧪 연결됨 → ${destination} 구독 시도`);
+    const sub = client.subscribe(destination, (message: IMessage) => {
+      const parsed = JSON.parse(message.body);
+      console.log('💬 메시지 수신됨:', parsed);
+        console.log('📍 현재 보고 있는 채팅방 ID:', currentChatRoomId);
+        console.log('📍 메시지의 채팅방 ID:', parsed.chatRoomId);
+        console.log('📍 보낸 사람 ID:', parsed.senderId);
+        console.log('📍 현재 유저 ID:', currentUserId);
 
-    if (parsed.chatRoomId === currentChatRoomId) {
-      onUnreadClear(parsed.chatRoomId);
-    } else {
-      onUnreadIncrease(parsed.chatRoomId);
-    }
+        // ✅ 자기 자신이 보낸 메시지는 무시
+        if (parsed.senderId === currentUserId) {
+          console.log('🔁 자기 메시지 → 무시');
+          return;
+        }
+
+      onMessage(parsed);
+
+        if (parsed.chatRoomId === currentChatRoomId) {
+          console.log('✅ 현재 채팅방 → onUnreadClear 호출');
+          onUnreadClear(parsed.chatRoomId);
+        } else {
+          console.log('🔔 다른 채팅방 → onUnreadIncrease 호출');
+          onUnreadIncrease(parsed.chatRoomId);
+        }
+    });
+
+    subscriptions.set(destination, sub);
+    console.log(`📥 Subscribed to ${destination}`);
   });
-
-  subscriptions.set(destination, sub);
-  console.log(`📥 Subscribed to ${destination}`);
 };
 
 export const unsubscribeFromRoom = (chatRoomId: number) => {

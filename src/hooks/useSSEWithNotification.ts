@@ -69,7 +69,7 @@ export const useSSEWithNotification = (
     const showNotification = (data: any) => {
       const notification = new Notification(`${data.senderName}`, {
         body: data.message,
-        icon: data.senderProfileImage || '/default_profile.jpg',
+        //icon: data.senderProfileImage || '/default_profile.jpg',
       });
 
       notification.onclick = (event) => {

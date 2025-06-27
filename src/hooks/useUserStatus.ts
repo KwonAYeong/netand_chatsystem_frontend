@@ -18,8 +18,6 @@ export default function useUserStatus(
       (id) => !userIds.includes(id)
     );
 
-    console.log('🧪 useUserStatus → 구독 추가:', newIds, '해제:', removedIds);
-
     // 새로 추가된 ID 구독
     newIds.forEach((id) => {
       subscribeToStatus(id, onStatusUpdate);
