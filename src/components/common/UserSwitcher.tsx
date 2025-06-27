@@ -8,9 +8,9 @@ const PersonIcon = MdPerson as unknown as React.FC<React.SVGProps<SVGSVGElement>
 const dummyUserIds = [1, 2, 3, 4, 5, 6, 7, 8];
 
 const UserSwitcher = () => {
-  const { user, setUserById } = useUser();
+  const { user } = useUser();
   const [showList, setShowList] = useState(false);
-const { subscribeUsers } = useUserStatusContext();
+
   return (
     <div className="relative w-6 h-6">
       <button
@@ -25,10 +25,16 @@ const { subscribeUsers } = useUserStatusContext();
             <button
               key={id}
               onClick={async () => {
+                if (user?.userId === id) {
+                  setShowList(false); // 자기 자신 선택하면 무시
+                  return;
+                }
+
+                disconnectSocket(); // ✅ 현재 연결 종료
+                localStorage.setItem('userId', String(id)); // ✅ 새 유저 저장
                 setShowList(false);
-                //disconnectSocket();
-                await new Promise(res => setTimeout(res, 300));
-                setUserById(id);     // 새 유저로 재연결 및 상태 갱신
+                await new Promise((res) => setTimeout(res, 100)); // 소켓 종료 여유
+                window.location.reload(); // ✅ 새로고침으로 유저 전환
               }}
               className={`w-full px-3 py-2 text-left text-sm hover:bg-blue-50 ${
                 user?.userId === id ? 'bg-blue-100' : ''

@@ -92,9 +92,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   // 처음 유저 1번 자동 연결
-  useEffect(() => {
-    setUserById(1);
-  }, []);
+useEffect(() => {
+  const storedId = localStorage.getItem('userId');
+  const userId = storedId ? Number(storedId) : 1; // 없으면 기본값 1
+  setUserById(userId);
+}, []);
 
   return (
     <UserContext.Provider value={{ user, setUser, setUserById, wsConnected }}>
