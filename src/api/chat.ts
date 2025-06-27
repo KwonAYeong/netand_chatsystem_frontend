@@ -54,8 +54,9 @@ export const updateLastReadMessage = (
 };
 
 // ✅ 그룹 채팅방 목록 조회
-export const getGroupChannelsByUser = (userId: number) => {
-  return api.get(`/chat/group/list/${userId}`);
+export const getGroupChannelsByUser = async (userId: number) => {
+  const res = await api.get(`/chat/group/list/${userId}`);
+  return res.data;
 };
 
 // ✅ 그룹 채팅방 멤버 목록 조회

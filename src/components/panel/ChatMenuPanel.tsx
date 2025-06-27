@@ -7,7 +7,7 @@ import { useUser } from '../../context/UserContext';
 import { useChatUI } from '../../context/ChatUIContext';
 import { api } from '../../api/axios';
 import type { ChatRoom } from '../../types/chat';
-
+import { getGroupChannelsByUser } from '../../api/chat';
 interface Props {
   currentUserId: number;
   selectedRoomId?: number;
@@ -24,8 +24,7 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
   const fetchChannelRooms = useCallback(async () => {
     if (!user) return;
     try {
-      const res = await fetch(`http://localhost:8080/chat/group/list/${user.userId}`);
-      const data = await res.json();
+      const data = await getGroupChannelsByUser(user.userId);
 
       const enriched = data.map((room: any) => ({
         ...room,
