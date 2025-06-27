@@ -1,4 +1,3 @@
-// src/components/panel/ChatMenuPanel.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import ChatList from './ChatList';
 import ChannelList from './ChannelList';
@@ -8,17 +7,15 @@ import { useUser } from '../../context/UserContext';
 import { useChatUI } from '../../context/ChatUIContext';
 import { api } from '../../api/axios';
 import type { ChatRoom } from '../../types/chat';
+
 interface Props {
   currentUserId: number;
-  unreadCounts?: Record<number, number>;
   selectedRoomId?: number;
 }
 
-
 export default function ChatMenuPanel({ currentUserId }: Props) {
-  const { user } = useUser();
+  const { user, unreadCounts, setUnreadCounts } = useUser(); // ✅ Context에서 받기
   const { selectedRoom, setChatRooms, setSelectedRoom } = useChatUI();
-
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [dmRooms, setDmRooms] = useState<ChatRoom[]>([]);
   const [channels, setChannels] = useState<ChatRoom[]>([]);
@@ -33,7 +30,7 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
       const enriched = data.map((room: any) => ({
         ...room,
         chatRoomType: 'GROUP',
-        receiverProfileImage: '', // 그룹은 대표 이미지 없음
+        receiverProfileImage: '',
         lastMessage: room.lastMessage ?? '',
         hasUnreadMessage: room.hasUnreadMessage ?? false,
         unreadMessageCount: room.unreadMessageCount ?? 0,
@@ -56,13 +53,30 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
     }
   }, [user, setChatRooms]);
 
-  // ✅ 1:1 채팅방 불러오기 (chatRoomType === 'DM' 필터링 포함)
+  // ✅ 안 읽은 메시지 수 수동 증가 (웹소켓 이벤트 전용)
+  const handleUnreadIncrease = (roomId: number) => {
+    setUnreadCounts((prev) => ({
+      ...prev,
+      [roomId]: (prev[roomId] || 0) + 1,
+    }));
+  };
+
+  // ✅ 안 읽은 메시지 수 수동 초기화
+  const handleUnreadClear = (roomId: number) => {
+    setUnreadCounts((prev) => {
+      const updated = { ...prev };
+      delete updated[roomId];
+      return updated;
+    });
+  };
+
+  // ✅ 1:1 채팅방 불러오기
   const fetchDmRooms = useCallback(async () => {
     if (!user) return;
     try {
       const res = await api.get(`/chat/dm/list/${user.userId}`);
       const enriched: ChatRoom[] = res.data
-        .filter((room: any) => room.chatRoomType === 'DM') // ✅ DM만 필터링
+        .filter((room: any) => room.chatRoomType === 'DM')
         .map((room: any) => ({
           ...room,
           lastMessage: room.lastMessage ?? '',
@@ -94,6 +108,7 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
           channelRooms={channels}
           selectedRoomId={selectedRoom?.type === 'group' ? selectedRoom.id : undefined}
           setSelectedRoom={setSelectedRoom}
+          unreadCounts={unreadCounts}
         />
         <button
           className="text-sm text-gray-600 hover:text-blue-600"
@@ -111,6 +126,9 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
           selectedRoomId={selectedRoom?.type === 'dm' ? selectedRoom.id : undefined}
           setSelectedRoom={setSelectedRoom}
           dmRooms={dmRooms}
+          onUnreadIncrease={handleUnreadIncrease}
+          onUnreadClear={handleUnreadClear}
+          unreadCounts={unreadCounts} // ✅ Context에서 받은 상태 사용
         />
         <InviteUser
           senderId={user!.userId}
@@ -122,7 +140,7 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
               type: 'dm',
               profileImage: newRoom.receiverProfileImage || '/default_profile.jpg',
             });
-            fetchDmRooms(); // 초대 후 목록 즉시 갱신
+            fetchDmRooms();
           }}
         />
       </div>

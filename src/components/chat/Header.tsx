@@ -25,9 +25,6 @@ export default function Header({
 }: HeaderProps) {
   const [showSettingModal, setShowSettingModal] = useState(false);
   const { selectedRoom, setSelectedRoom, setCurrentChatRoomId } = useChatUI();
-
-  console.log('🧪 Header에서 selectedRoom:', selectedRoom);
-
   return (
     <>
       <div className="flex items-center justify-between px-4 py-2 bg-white shadow-sm">

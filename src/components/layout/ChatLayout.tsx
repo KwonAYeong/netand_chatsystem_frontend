@@ -1,4 +1,3 @@
-// src/components/layout/ChatLayout.tsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import Sidebar from '../sidebar/Sidebar';
@@ -17,11 +16,10 @@ import { getChatRoomsByUser } from '../../api/chat';
 import type { ChatRoom as ChatRoomType } from '../../types/chat';
 
 const ChatLayout = () => {
-  const { user } = useUser();
+  const { user } = useUser(); // ✅ unreadCounts도 여기서 가져옴
   const { chatRoomId } = useParams();
   const prevRoomIdRef = useRef<number | null>(null);
   const [dmRooms, setDmRooms] = useState<ChatRoomType[]>([]);
-  const [unreadCounts, setUnreadCounts] = useState<Record<number, number>>({});
 
   const {
     showProfile,
@@ -43,14 +41,14 @@ const ChatLayout = () => {
       .then((res) => {
         const patchedRooms = res.data.map((room: any) => ({
           ...room,
-          userId: room.userId, // ✅ 이렇게 추가
+          userId: room.userId,
         }));
         setDmRooms(patchedRooms);
       })
       .catch((err) => console.error('❌ 채팅방 목록 가져오기 실패:', err));
   }, [user]);
 
-  // ✅ 선택된 채팅방 변경 감지 → dm 또는 group 구분해서 이름 설정
+  // ✅ 선택된 채팅방 변경 감지
   useEffect(() => {
     if (!chatRoomId) {
       setSelectedRoom(null);
@@ -60,6 +58,8 @@ const ChatLayout = () => {
       if (prevRoomIdRef.current !== newRoomId) {
         const matchedRoom = dmRooms.find((room) => room.chatRoomId === newRoomId);
 
+        if (!matchedRoom) return;
+        
         setSelectedRoom({
           id: newRoomId,
           type: matchedRoom?.chatRoomType === 'GROUP' ? 'group' : 'dm',
@@ -70,28 +70,11 @@ const ChatLayout = () => {
         prevRoomIdRef.current = newRoomId;
       }
 
-    // ✅ 이 조건 추가
-    if (!showProfile) {
-      setShowProfile(false);
+      if (!showProfile) {
+        setShowProfile(false);
+      }
     }
-  }
-}, [chatRoomId, user?.userId, dmRooms]);
-
-  // 📬 안 읽은 메시지 수 관리
-  const handleUnreadIncrease = (roomId: number) => {
-    setUnreadCounts((prev) => ({
-      ...prev,
-      [roomId]: (prev[roomId] || 0) + 1,
-    }));
-  };
-
-  const handleUnreadClear = (roomId: number) => {
-    setUnreadCounts((prev) => {
-      const updated = { ...prev };
-      delete updated[roomId];
-      return updated;
-    });
-  };
+  }, [chatRoomId, user?.userId, dmRooms]);
 
   if (!user) return <div className="p-4">유저 정보를 불러오는 중...</div>;
 
@@ -105,7 +88,6 @@ const ChatLayout = () => {
         <ChatMenuPanel
           currentUserId={user.userId}
           selectedRoomId={selectedRoom?.id}
-          unreadCounts={unreadCounts}
         />
       )}
       {activeMenu === 'activity' && <ActivityPanel />}
@@ -120,20 +102,20 @@ const ChatLayout = () => {
                 userId={user.userId}
                 chatRoomName={selectedRoom.name}
                 chatRoomProfileImage={selectedRoom.profileImage || ''}
-                onUnreadClear={handleUnreadClear}
+                onUnreadClear={() => {}} // ✅ 필요하면 context에서 setUnreadCounts 사용
                 refetchChatRooms={fetchChatRooms}
               />
             ) : (
               <GroupChatRoom
-              key={selectedRoom.id}
+                key={selectedRoom.id}
                 roomId={selectedRoom.id}
                 chatRoomName={selectedRoom.name}
                 currentUser={{
                   id: user.userId,
                   nickname: user.nickname ?? user.name,
                 }}
-                onUnreadIncrease={handleUnreadIncrease}
-                onUnreadClear={handleUnreadClear}
+                onUnreadIncrease={() => {}}
+                onUnreadClear={() => {}}
               />
             )
           ) : (

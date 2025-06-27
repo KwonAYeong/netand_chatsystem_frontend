@@ -13,7 +13,7 @@ import { transform } from '../../utils/transform';
 import type { Message } from '../../types/message';
 import useWebSocket from '../../hooks/useWebSocket';
 import { useUser } from '../../context/UserContext';
-
+import { useChatUI } from '../../context/ChatUIContext';
 interface ChatRoomProps {
   chatRoomId: number;
   userId: number;
@@ -35,7 +35,7 @@ export default function ChatRoom({
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const { user } = useUser();
   const lastReadMessageIdRef = useRef<number>(0); // 마지막 읽은 메시지 추적
-
+  const { setSelectedRoom } = useChatUI();
   // 하단으로 스크롤
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -82,7 +82,7 @@ export default function ChatRoom({
     onUnreadClear,
   });
 
-  // 기존 메시지 불러오기
+
   useEffect(() => {
     getMessages(chatRoomId)
       .then((res) => {

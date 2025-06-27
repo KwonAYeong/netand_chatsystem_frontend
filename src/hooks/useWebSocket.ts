@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import client, {
   subscribeToRoom,
   unsubscribeFromRoom,
   sendMessage,
 } from '../lib/websocket';
-
+import { useUser } from '../context/UserContext';
 interface Props {
   roomId: number;
   activeRoomId: number;
@@ -13,12 +13,9 @@ interface Props {
   onUnreadClear: (roomId: number) => void;
 }
 
-// ✅ WebSocket 연결 대기 함수
 const waitUntilConnected = (callback: () => void, retry = 0) => {
-  const isConnected = client.connected;
-  const isSocketReady = !!(client as any)._connection;
-
-  if (isConnected && isSocketReady) {
+  if (client.connected) {
+    console.log('✅ STOMP 연결됨 → 콜백 실행');
     callback();
     return;
   }
@@ -37,20 +34,18 @@ export default function useWebSocket({
   onMessage,
   onUnreadIncrease,
   onUnreadClear,
+  
 }: Props) {
-  const isSubscribedRef = useRef(false);
-
+  const { user } = useUser();
   useEffect(() => {
+    if (!user) return;
     waitUntilConnected(() => {
-      if (!isSubscribedRef.current) {
-        subscribeToRoom(roomId, onMessage, onUnreadIncrease, onUnreadClear, activeRoomId);
-        isSubscribedRef.current = true;
-      }
+      unsubscribeFromRoom(roomId);
+      subscribeToRoom(roomId, onMessage, onUnreadIncrease, onUnreadClear, activeRoomId,user.userId);
     });
 
     return () => {
       unsubscribeFromRoom(roomId);
-      isSubscribedRef.current = false;
     };
   }, [roomId, activeRoomId]);
 
