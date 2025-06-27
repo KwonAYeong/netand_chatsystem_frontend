@@ -6,18 +6,20 @@ import {
   Navigate,
   useNavigate,
 } from 'react-router-dom';
-
+import { UserStatusProvider } from './context/UserStatusContext';
 import { UserProvider, useUser } from './context/UserContext';
 import { NotificationSettingsProvider, useNotificationSettings } from './context/NotificationSettingsContext';
 import { useSSEWithNotification } from './hooks/useSSEWithNotification';
 import { ChatUIProvider } from './context/ChatUIContext';
 import ChatRoutes from './routes/chatRoutes';
-
+import { connectSocket } from './lib/websocket';
 const App = () => {
   return (
     <Router>
       <UserProvider>
-        <NotificationSettingsProviderWrapper />
+        <UserStatusProvider>
+          <NotificationSettingsProviderWrapper />
+        </UserStatusProvider>
       </UserProvider>
     </Router>
   );
@@ -26,7 +28,16 @@ const App = () => {
 // 🚩 이게 반드시 있어야 함!
 const NotificationSettingsProviderWrapper = () => {
   const { user } = useUser();
-
+  const connectedRef = useRef(false); 
+  useEffect(() => {
+    if (user?.userId && !connectedRef.current) {
+      console.log('🌐 userId 확인됨 → WebSocket 연결 시작');
+      connectSocket(() => {
+        console.log('🌐 WebSocket 연결 완료');
+      }, user.userId);
+      connectedRef.current = true;
+    }
+  }, [user?.userId]);
   if (!user?.userId) {
     return <div>Loading...</div>;
   }

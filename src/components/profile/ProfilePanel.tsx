@@ -1,58 +1,95 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useUser } from '../../context/UserContext';
 import { useChatUI } from '../../hooks/useChatUI';
 import ProfileHeader from './ProfileHeader';
 import ProfileCard from './ProfileCard';
 import UserProfileCard from './UserProfileCard';
-import { getUserProfileById, patchUserStatus } from '../../api/profile';
+import { getUserProfileById } from '../../api/profile';
+import { User } from '../../types/user';
+import { setAway, setOnline } from '../../lib/websocket';
 
 const ProfilePanel = () => {
-  const { setShowProfile, setShowProfileModal, selectedUser } = useChatUI();
-  const { user: currentUser } = useUser();
-  const [remoteProfile, setRemoteProfile] = useState<any>(null);
+  const { setShowProfile, setShowProfileModal, selectedUser, setSelectedUser } = useChatUI();
+  const { user: currentUser, setUser, wsConnected } = useUser(); 
+  const [remoteProfile, setRemoteProfile] = useState<User | null>(null);
   const isMe = selectedUser?.userId === currentUser?.userId;
-  const profile = isMe ? currentUser : remoteProfile;
-  useEffect(() => {
-    if (!selectedUser?.userId) return;
+  const profile: User | null = isMe ? currentUser : remoteProfile;
 
-    const fetchProfile = async () => {
+  // ✅ selectedUser와 상태가 준비되었을 때만 렌더링
+
+  // ✅ currentUser 바뀌면 selectedUser도 동기화
+  useEffect(() => {
+    if (currentUser && selectedUser?.userId === currentUser.userId) {
+      setSelectedUser(currentUser);
+    }
+  }, [currentUser]);
+
+  // ✅ 상대 프로필 로딩
+  useEffect(() => {
+    if (!selectedUser || isMe) return;
+    (async () => {
       try {
         const data = await getUserProfileById(selectedUser.userId);
         setRemoteProfile({ ...data, userId: data.id });
-      } catch (err) {
-        console.error('❌ 프로필 로딩 실패', err);
+      } catch (e) {
+        console.error(e);
       }
-    };
+    })();
+  }, [selectedUser, isMe]);
 
-    fetchProfile();
-  }, [selectedUser]);
+  const stableUserIds = useMemo(() => {
+    if (
+      selectedUser &&
+      typeof selectedUser.userId === 'number' &&
+      selectedUser.userId !== currentUser?.userId // 본인은 제외
+    ) {
+      return [selectedUser.userId];
+    }
+    return [];
+  }, [selectedUser, currentUser]);
 
   const handleStatusChange = async (isActive: boolean) => {
-    const newStatus = isActive ? 'online' : 'away';
+    if (!profile) return;
+    const newStatus = isActive ? 'ONLINE' : 'AWAY';
 
     try {
-      await patchUserStatus(profile.userId, newStatus);
-      setRemoteProfile((prev: any) => ({ ...prev, isActive }));
+      if (isActive) setOnline(profile.userId);
+      else setAway(profile.userId);
+
+      if (isMe) {
+        setUser((prev) =>
+          prev ? { ...prev, isActive, status: newStatus } : prev
+        );
+      } else {
+        setRemoteProfile((prev) =>
+          prev ? { ...prev, isActive, status: newStatus } : prev
+        );
+      }
     } catch (err) {
-      console.error('❌ 상태 변경 실패', err);
+      console.error('상태 변경 실패', err);
     }
   };
 
-  if (!profile) return null;
+  // ✅ 준비되지 않으면 로딩 화면
+  if (!selectedUser || !profile) {
+    return (
+      <aside>
+        <ProfileHeader onClose={() => setShowProfile(false)} />
+        <div>로딩 중...</div>
+      </aside>
+    );
+  }
 
   return (
-    
     <aside className="w-[400px] h-full bg-white border-l border-gray-200 right-0 top-0 shadow-lg flex flex-col z-50">
       <ProfileHeader onClose={() => setShowProfile(false)} />
-
       <div className="flex-1 overflow-y-auto">
         {isMe ? (
-          <ProfileCard user={profile} onisActiveChange={handleStatusChange} />
+          <ProfileCard user={profile!} onIsActiveChange={handleStatusChange} />
         ) : (
           <UserProfileCard user={profile} />
         )}
       </div>
-
       {isMe && (
         <div className="p-4 border-t border-gray-100">
           <button

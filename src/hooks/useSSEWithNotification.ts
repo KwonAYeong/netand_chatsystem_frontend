@@ -67,7 +67,7 @@ export const useSSEWithNotification = (
     };
 
     const showNotification = (data: any) => {
-      const notification = new Notification(`${data.senderName}님이 보낸 메시지`, {
+      const notification = new Notification(`${data.senderName}`, {
         body: data.message,
         icon: data.senderProfileImage || '/default_profile.jpg',
       });

@@ -1,12 +1,16 @@
 import clsx from 'clsx';
+import UserisActiveBadge from './UserStatusBadge';
 
 interface UserAvatarProps {
   src: string;
   alt?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  isActive?: boolean;
+  finalStatus?: 'ONLINE' | 'AWAY';
   showIsActive?: boolean;
   onClick?: () => void;
+  isSelf?: boolean;
+  isActive?: boolean;
+  wsConnected?: boolean;
 }
 
 const sizeMap = {
@@ -16,41 +20,54 @@ const sizeMap = {
   xl: 'w-60 h-60',
 };
 
+const badgeSizeMap = {
+  sm: 8,
+  md: 10,
+  lg: 14,
+  xl: 18,
+};
+
 const UserAvatar = ({
   src,
   alt = 'User Avatar',
   size = 'md',
-  isActive = false,
+  finalStatus,
   showIsActive,
   onClick,
+  isSelf = false,
+  isActive = false,
+  wsConnected = false,
 }: UserAvatarProps) => {
-  const isActiveColor = isActive ? 'bg-green-500' : 'bg-gray-400';
   const finalSrc = src?.trim() ? src : '/default_profile.jpg';
 
   return (
     <div
-    className={clsx('relative', sizeMap[size], onClick && 'cursor-pointer')}
-    onClick={onClick}
-  >
+      className={clsx('relative', sizeMap[size], onClick && 'cursor-pointer')}
+      onClick={onClick}
+    >
       <img
         src={finalSrc}
         alt={alt}
         onError={(e) => {
           const target = e.currentTarget as HTMLImageElement;
           if (target.src !== window.location.origin + '/default_profile.jpg') {
-            target.onerror = null; // 루프 방지
+            target.onerror = null;
             target.src = '/default_profile.jpg';
           }
         }}
         className="rounded-md object-cover w-full h-full border border-gray-200"
       />
       {showIsActive && (
-        <span
-          className={clsx(
-            'absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-white',
-            isActiveColor
-          )}
-        />
+        <div className="absolute bottom-0 right-0">
+          <UserisActiveBadge
+            isSelf={isSelf}
+            isActive={isActive}
+            finalStatus={finalStatus}
+            wsConnected={wsConnected}
+            size={badgeSizeMap[size]}
+            withText={false}
+          />
+        </div>
       )}
     </div>
   );

@@ -7,22 +7,13 @@ import InviteUser from './InviteUser';
 import { useUser } from '../../context/UserContext';
 import { useChatUI } from '../../context/ChatUIContext';
 import { api } from '../../api/axios';
-
+import type { ChatRoom } from '../../types/chat';
 interface Props {
   currentUserId: number;
   unreadCounts?: Record<number, number>;
   selectedRoomId?: number;
 }
 
-interface ChatRoom {
-  chatRoomId: number;
-  chatRoomName: string;
-  chatRoomType: string;
-  receiverProfileImage: string;
-  lastMessage: string;
-  hasUnreadMessage: boolean;
-  unreadMessageCount: number;
-}
 
 export default function ChatMenuPanel({ currentUserId }: Props) {
   const { user } = useUser();
@@ -70,7 +61,6 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
     if (!user) return;
     try {
       const res = await api.get(`/chat/dm/list/${user.userId}`);
-
       const enriched: ChatRoom[] = res.data
         .filter((room: any) => room.chatRoomType === 'DM') // ✅ DM만 필터링
         .map((room: any) => ({

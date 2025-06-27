@@ -40,13 +40,15 @@ const ChatLayout = () => {
   const fetchChatRooms = useCallback(() => {
     if (!user) return;
     getChatRoomsByUser(user.userId)
-      .then((res) => setDmRooms(res.data))
+      .then((res) => {
+        const patchedRooms = res.data.map((room: any) => ({
+          ...room,
+          userId: room.userId, // ✅ 이렇게 추가
+        }));
+        setDmRooms(patchedRooms);
+      })
       .catch((err) => console.error('❌ 채팅방 목록 가져오기 실패:', err));
   }, [user]);
-
-  useEffect(() => {
-    fetchChatRooms();
-  }, [fetchChatRooms]);
 
   // ✅ 선택된 채팅방 변경 감지 → dm 또는 group 구분해서 이름 설정
   useEffect(() => {
@@ -67,9 +69,13 @@ const ChatLayout = () => {
 
         prevRoomIdRef.current = newRoomId;
       }
+
+    // ✅ 이 조건 추가
+    if (!showProfile) {
+      setShowProfile(false);
     }
-    setShowProfile(false);
-  }, [chatRoomId, user?.userId, dmRooms, setSelectedRoom, setShowProfile]);
+  }
+}, [chatRoomId, user?.userId, dmRooms]);
 
   // 📬 안 읽은 메시지 수 관리
   const handleUnreadIncrease = (roomId: number) => {

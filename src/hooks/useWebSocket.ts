@@ -1,8 +1,5 @@
-// src/hooks/useWebSocket.ts
 import { useEffect, useRef } from 'react';
-import {
-  connectSocket,
-  disconnectSocket,
+import client, {
   subscribeToRoom,
   unsubscribeFromRoom,
   sendMessage,
@@ -16,6 +13,24 @@ interface Props {
   onUnreadClear: (roomId: number) => void;
 }
 
+// ✅ WebSocket 연결 대기 함수
+const waitUntilConnected = (callback: () => void, retry = 0) => {
+  const isConnected = client.connected;
+  const isSocketReady = !!(client as any)._connection;
+
+  if (isConnected && isSocketReady) {
+    callback();
+    return;
+  }
+
+  if (retry > 50) {
+    console.warn('❌ WebSocket 구독 실패: 연결 안 됨');
+    return;
+  }
+
+  setTimeout(() => waitUntilConnected(callback, retry + 1), 100);
+};
+
 export default function useWebSocket({
   roomId,
   activeRoomId,
@@ -25,10 +40,8 @@ export default function useWebSocket({
 }: Props) {
   const isSubscribedRef = useRef(false);
 
-  // 최초 mount + roomId 변경 시 구독 처리
   useEffect(() => {
-    // 1. 연결
-    connectSocket(() => {
+    waitUntilConnected(() => {
       if (!isSubscribedRef.current) {
         subscribeToRoom(roomId, onMessage, onUnreadIncrease, onUnreadClear, activeRoomId);
         isSubscribedRef.current = true;
@@ -36,31 +49,12 @@ export default function useWebSocket({
     });
 
     return () => {
-      // 2. 언마운트 시 해제
       unsubscribeFromRoom(roomId);
       isSubscribedRef.current = false;
     };
   }, [roomId, activeRoomId]);
 
-  // 명시적 재연결 또는 외부에서 호출할 수 있도록 반환
-  const connectWebSocket = () => {
-    connectSocket(() => {
-      if (!isSubscribedRef.current) {
-        subscribeToRoom(roomId, onMessage, onUnreadIncrease, onUnreadClear, activeRoomId);
-        isSubscribedRef.current = true;
-      }
-    });
-  };
-
-  const disconnectWebSocket = () => {
-    unsubscribeFromRoom(roomId);
-    disconnectSocket();
-    isSubscribedRef.current = false;
-  };
-
   return {
     sendMessage,
-    connectWebSocket,
-    disconnectWebSocket,
   };
 }

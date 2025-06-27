@@ -165,7 +165,7 @@ export default function ChatRoom({
         />
         <MessageList messages={messages} bottomRef={bottomRef} />
       </div>
-      <MessageInput onSend={handleSend} />
+      <MessageInput onSend={handleSend} chatRoomId={chatRoomId} hasMention={false} />
     </div>
   );
 }

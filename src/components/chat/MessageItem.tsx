@@ -21,6 +21,11 @@ export default function MessageItem({ message, isGrouped }: Props) {
 
   const fileLink = message.fileUrl || message.content;
   const fileName = decodeURIComponent(fileLink?.split('/').pop() || '파일');
+  const isMentioned = message.mentionedUserNames?.includes(user?.name || '');
+console.log('🟢 내 이름:', user?.name);
+console.log('📣 멘션 대상들:', message.mentionedUserNames);
+console.log('✅ isMentioned:', isMentioned);
+console.log('🧾 수신 메시지 전체:', message);
 
   const handleAvatarClick = () => {
     setSelectedUser?.({ userId: message.sender.id });
@@ -34,10 +39,44 @@ export default function MessageItem({ message, isGrouped }: Props) {
 
   // ✅ 콘솔에서 name 확인용
   console.log('sender name:', message.sender.name);
+function highlightMentions(text: string, mentionedNames: string[] = []) {
+  let result: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  // 멘션 이름들을 @이름 형식으로 정렬
+  const mentionRegex = new RegExp(`@(${mentionedNames.join('|')})`, 'g');
+
+  let match: RegExpExecArray | null;
+  while ((match = mentionRegex.exec(text)) !== null) {
+    const start = match.index;
+    const end = match.index + match[0].length;
+
+    // 일반 텍스트 추가
+    if (start > lastIndex) {
+      result.push(text.slice(lastIndex, start));
+    }
+
+    // 멘션 강조
+    result.push(
+      <span key={start} className="bg-blue-200 text-blue-500 px-1 rounded font-bold">
+        {match[0]}
+      </span>
+    );
+
+    lastIndex = end;
+  }
+
+  // 나머지 텍스트
+  if (lastIndex < text.length) {
+    result.push(text.slice(lastIndex));
+  }
+
+  return result;
+}
 
   return (
     <div
-      className="relative flex items-start px-4 py-1 gap-2 hover:bg-gray-100 rounded-md transition group"
+      className="relative flex items-start px-4 py-1 gap-2 rounded-md transition group hover:bg-gray-100"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -67,7 +106,8 @@ export default function MessageItem({ message, isGrouped }: Props) {
           }`}
         >
           {/* 텍스트 메시지 */}
-          {message.messageType === 'TEXT' && message.content}
+          {message.messageType === 'TEXT' &&
+            highlightMentions(message.content, message.mentionedUserNames)}
 
           {/* 파일 메시지 */}
           {message.messageType === 'FILE' && fileLink && (

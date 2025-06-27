@@ -12,13 +12,12 @@ const UserProfileCard = ({ user }: UserProfileCardProps) => {
       <div className="flex flex-col items-center gap-4">
         <UserAvatar
           src={user.profileImageUrl}
-          isActive={user.isActive}
+          finalStatus={user.status || 'AWAY'}
           size="xl"
-          showIsActive={false}
         />
         <div className="flex justify-start items-center w-full mt-4 gap-2">
           <p className="text-xl font-bold">{user.name}</p>
-          <UserisActiveBadge isActive={user.isActive} size={10} withText />
+          <UserisActiveBadge finalStatus={user.status || 'AWAY'} size={10} withText />
         </div>
       </div>
       <div className="flex-1 mt-6 space-y-4 text-base text-gray-700">
