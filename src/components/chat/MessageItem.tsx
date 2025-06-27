@@ -28,20 +28,24 @@ export default function MessageItem({ message, isGrouped }: Props) {
     setShowProfile?.(true);
   };
 
-  const timeString = new Date(message.createdAt).toLocaleTimeString([], {
+  const timeString = new Intl.DateTimeFormat('ko-KR', {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false,
-    timeZone: 'Asia/Seoul'
-  });
+    hour12: true,
+    timeZone: 'Asia/Seoul',
+  }).format(new Date(message.createdAt));
 
 
 function highlightMentions(text: string, mentionedNames: string[] = []) {
+    if (!mentionedNames || mentionedNames.length === 0 || mentionedNames.some(n => !n)) {
+    return [text];
+  }
   let result: React.ReactNode[] = [];
   let lastIndex = 0;
 
+  const escapedNames = mentionedNames.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   // 멘션 이름들을 @이름 형식으로 정렬
-  const mentionRegex = new RegExp(`@(${mentionedNames.join('|')})`, 'g');
+  const mentionRegex = new RegExp(`@(${escapedNames.join('|')})`, 'g');
 
   let match: RegExpExecArray | null;
   while ((match = mentionRegex.exec(text)) !== null) {
@@ -73,6 +77,7 @@ function highlightMentions(text: string, mentionedNames: string[] = []) {
 
   return (
     <div
+      id={`message-${message.id}`}
       className="relative flex items-start px-4 py-1 gap-2 rounded-md transition group hover:bg-gray-100"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

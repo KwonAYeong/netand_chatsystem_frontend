@@ -6,8 +6,8 @@ let socket: WebSocket | null = null;
 
 const client = new Client({
   webSocketFactory: () => {
-    //return new WebSocket('ws://localhost:8080/ws');
-    return new WebSocket('ws://3.39.8.219:8080/ws');
+    return new WebSocket('ws://localhost:8080/ws');
+    //return new WebSocket('ws://3.39.8.219:8080/ws');
   },
   reconnectDelay: 5000,
   heartbeatIncoming: 4000,

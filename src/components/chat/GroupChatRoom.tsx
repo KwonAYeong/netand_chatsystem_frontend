@@ -18,6 +18,7 @@ import useWebSocket from '../../hooks/useWebSocket';
 import type { Message } from '../../types/message';
 import type { User } from '../../types/user';
 import { useChatUI } from '../../context/ChatUIContext';
+import { useSearchParams } from 'react-router-dom';
 
 interface GroupChatRoomProps {
   roomId: number;
@@ -28,6 +29,7 @@ interface GroupChatRoomProps {
   };
   onUnreadIncrease: (roomId: number) => void;
   onUnreadClear: (roomId: number) => void;
+  targetMessageId?: string;
 }
 
 export default function GroupChatRoom({
@@ -36,6 +38,7 @@ export default function GroupChatRoom({
   currentUser,
   onUnreadIncrease,
   onUnreadClear,
+  targetMessageId
 }: GroupChatRoomProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [members, setMembers] = useState<User[]>([]);
@@ -45,7 +48,6 @@ export default function GroupChatRoom({
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const lastReadMessageIdRef = useRef<number>(0);
   const { user } = useUser();
-
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -67,7 +69,7 @@ export default function GroupChatRoom({
 
   const handleIncomingMessage = (data: any) => {
     const newMessage = transform(data);
-console.log('📦 WebSocket 수신 원본:', data);
+    console.log('📦 WebSocket 수신 원본:', data);
     setMessages((prev: Message[]) => {
       const map = new Map<number, Message>(prev.map((m) => [m.id, m]));
       map.set(newMessage.id, newMessage);
@@ -114,6 +116,22 @@ console.log('📦 WebSocket 수신 원본:', data);
       })
       .catch((err) => console.error('❌ 메시지 불러오기 실패:', err));
   }, [roomId]);
+useEffect(() => {
+  if (targetMessageId && messages.length > 0) {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const el = document.getElementById(`message-${targetMessageId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring', 'ring-blue-300', 'rounded-md');
+          setTimeout(() => el.classList.remove('ring', 'ring-blue-300'), 2000);
+        } else {
+          console.warn('❌ 메시지 요소를 찾을 수 없음:', targetMessageId);
+        }
+      }, 100); // ← 너무 크면 UX 나빠지니 이 정도 유지
+    });
+  }
+}, [targetMessageId, messages]);
 
   useEffect(() => {
     getGroupMembers(roomId)

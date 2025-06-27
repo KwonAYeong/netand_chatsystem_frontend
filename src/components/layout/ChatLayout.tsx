@@ -14,13 +14,18 @@ import { useChatUI as useChatUIContext } from '../../context/ChatUIContext';
 import { useChatUI as useChatUIHooks } from '../../hooks/useChatUI';
 import { getChatRoomsByUser } from '../../api/chat';
 import type { ChatRoom as ChatRoomType } from '../../types/chat';
-
+import { useSearchParams } from 'react-router-dom';
+import { getGroupChannelsByUser } from '../../api/chat';
+import { useLocation } from 'react-router-dom';
 const ChatLayout = () => {
   const { user } = useUser(); // ✅ unreadCounts도 여기서 가져옴
   const { chatRoomId } = useParams();
   const prevRoomIdRef = useRef<number | null>(null);
-  const [dmRooms, setDmRooms] = useState<ChatRoomType[]>([]);
-
+  const [dmRooms, setDmRooms,] = useState<ChatRoomType[]>([]);
+  const [groupRooms, setGroupRooms] = useState<ChatRoomType[]>([]);
+  const [searchParams] = useSearchParams();
+  const targetMessageId = searchParams.get('message'); 
+  const location = useLocation();
   const {
     showProfile,
     showProfileModal,
@@ -46,35 +51,43 @@ const ChatLayout = () => {
         setDmRooms(patchedRooms);
       })
       .catch((err) => console.error('❌ 채팅방 목록 가져오기 실패:', err));
+       getGroupChannelsByUser(user.userId)
+    .then((res) => {
+      const patchedGroups = res.map((room: any) => ({
+        ...room,
+        userId: room.userId,
+      }));
+      setGroupRooms(patchedGroups);
+    })
+    .catch((err) => console.error('❌ 그룹 채팅방 실패:', err));
   }, [user]);
-
+useEffect(() => {
+  if (user) {
+    fetchChatRooms(); 
+  }
+}, [user, fetchChatRooms]);
   // ✅ 선택된 채팅방 변경 감지
-  useEffect(() => {
-    if (!chatRoomId) {
-      setSelectedRoom(null);
-      prevRoomIdRef.current = null;
-    } else {
-      const newRoomId = Number(chatRoomId);
-      if (prevRoomIdRef.current !== newRoomId) {
-        const matchedRoom = dmRooms.find((room) => room.chatRoomId === newRoomId);
+ useEffect(() => {
+  console.log('📍 useEffect triggered by pathname:', location.pathname);
+  if (!chatRoomId) return;
+  if (dmRooms.length === 0 && groupRooms.length === 0) return;
 
-        if (!matchedRoom) return;
-        
-        setSelectedRoom({
-          id: newRoomId,
-          type: matchedRoom?.chatRoomType === 'GROUP' ? 'group' : 'dm',
-          name: matchedRoom?.chatRoomName || `채팅방 ${chatRoomId}`,
-          profileImage: matchedRoom?.receiverProfileImage || '/default_profile.jpg',
-        });
+  const newRoomId = Number(chatRoomId);
+  const matchedRoom = [...dmRooms, ...groupRooms].find(
+    (room) => room.chatRoomId === newRoomId
+  );
 
-        prevRoomIdRef.current = newRoomId;
-      }
+  if (!matchedRoom) return;
 
-      if (!showProfile) {
-        setShowProfile(false);
-      }
-    }
-  }, [chatRoomId, user?.userId, dmRooms]);
+  setSelectedRoom({
+    id: newRoomId,
+    type: matchedRoom.chatRoomType === 'GROUP' ? 'group' : 'dm',
+    name: matchedRoom.chatRoomName,
+    profileImage: matchedRoom.receiverProfileImage ?? '',
+  });
+
+  prevRoomIdRef.current = newRoomId;
+}, [location.pathname, dmRooms, groupRooms]);
 
   if (!user) return <div className="p-4">유저 정보를 불러오는 중...</div>;
 
@@ -107,7 +120,7 @@ const ChatLayout = () => {
               />
             ) : (
               <GroupChatRoom
-                key={selectedRoom.id}
+                key={`${selectedRoom.id}-${targetMessageId || ''}`}
                 roomId={selectedRoom.id}
                 chatRoomName={selectedRoom.name}
                 currentUser={{
@@ -116,6 +129,7 @@ const ChatLayout = () => {
                 }}
                 onUnreadIncrease={() => {}}
                 onUnreadClear={() => {}}
+                targetMessageId={targetMessageId || undefined}
               />
             )
           ) : (
