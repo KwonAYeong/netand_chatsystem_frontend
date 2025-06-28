@@ -29,28 +29,37 @@ export default function InviteUser({ senderId, onCreated, existingRooms }: Props
       (room) => room.chatRoomName.toLowerCase() === enteredEmail
     );
 
-    if (alreadyExists) {
-      alert('이미 초대된 사용자입니다.');
-      return;
-    }
-
     setLoading(true);
     try {
       const res = await api.post('/chat/dm', {
         senderId,
         receiverEmail: enteredEmail,
       });
+      
+      const result = res.data;
+          if (result.created === false) {
+      alert('이미 존재하는 채팅방입니다.');
+      setShowModal(false);
+      setEmail('');
+      return;
+    }
 
-      const newRoom = res.data;
+      const newRoom = {
+      chat_room_id: result.chatRoomId,
+      chat_room_name: result.receiverName,
+      chat_room_profile_image: result.receiverProfileImage,
+      chat_room_type: 'DM',
+      user_id: result.receiverId,
+    };
 
       alert('✅ 채팅방이 생성되었습니다!');
       setShowModal(false);
       setEmail('');
 
       onCreated?.({
-        chatRoomId: newRoom.chatRoomId,
-        chatRoomName: newRoom.chatRoomName,
-        receiverProfileImage: newRoom.receiverProfileImage || '',
+        chatRoomId: newRoom.chat_room_id,
+        chatRoomName: newRoom.chat_room_name,
+        receiverProfileImage: newRoom.chat_room_profile_image || '',
       });
     } catch (err: any) {
       console.error('❌ 채팅방 생성 실패:', err);

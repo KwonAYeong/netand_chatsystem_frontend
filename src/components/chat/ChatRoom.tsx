@@ -41,6 +41,25 @@ export default function ChatRoom({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const { selectedRoom } = useChatUI();
+const currentChatRoomId = selectedRoom?.id;
+
+  useEffect(() => {
+  const handleFocus = () => {
+    if (
+      document.hasFocus() &&
+      typeof currentChatRoomId === 'number' &&
+      selectedRoom?.id === currentChatRoomId)
+      {
+      console.log('🌟 창 포커스 얻음 → 읽음 재확인');
+      onUnreadClear(currentChatRoomId);
+      }
+  };
+  window.addEventListener('focus', handleFocus);
+  return () => window.removeEventListener('focus', handleFocus);
+}, [selectedRoom, currentChatRoomId]);
+
+
   // 읽음 처리
   const tryUpdateLastRead = (msg: Message) => {
     const isNotMine = msg.sender.id !== userId;
@@ -159,8 +178,8 @@ export default function ChatRoom({
       />
       <div className="flex-1 overflow-y-auto px-4 py-2">
         <ProfileIntro
-          name={`채팅방 ${chatRoomId}`}
-          profileUrl="/default_profile.jpg"
+          name={chatRoomName}
+          profileUrl={chatRoomProfileImage}
           chatRoomType="dm"
         />
         <MessageList messages={messages} bottomRef={bottomRef} />

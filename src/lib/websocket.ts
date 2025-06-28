@@ -67,53 +67,6 @@ export const sendMessage = (payload: any) => {
   });
 };
 
-export const subscribeToRoom = (
-  chatRoomId: number,
-  onMessage: (msg: any) => void,
-  onUnreadIncrease: (roomId: number) => void,
-  onUnreadClear: (roomId: number) => void,
-  currentChatRoomId: number,
-  currentUserId: number  
-) => {
-  
-  const destination = `/sub/chatroom/${chatRoomId}`;
-
-  if (subscriptions.has(destination)) {
-    console.log(`⚠️ Already subscribed to ${destination}`);
-    return;
-  }
-  waitUntilReady(() => {
-    console.log(`🧪 연결됨 → ${destination} 구독 시도`);
-    const sub = client.subscribe(destination, (message: IMessage) => {
-      const parsed = JSON.parse(message.body);
-      console.log('💬 메시지 수신됨:', parsed);
-        console.log('📍 현재 보고 있는 채팅방 ID:', currentChatRoomId);
-        console.log('📍 메시지의 채팅방 ID:', parsed.chatRoomId);
-        console.log('📍 보낸 사람 ID:', parsed.senderId);
-        console.log('📍 현재 유저 ID:', currentUserId);
-
-        // ✅ 자기 자신이 보낸 메시지는 무시
-        if (parsed.senderId === currentUserId) {
-          console.log('🔁 자기 메시지 → 무시');
-          return;
-        }
-
-      onMessage(parsed);
-
-        if (parsed.chatRoomId === currentChatRoomId) {
-          console.log('✅ 현재 채팅방 → onUnreadClear 호출');
-          onUnreadClear(parsed.chatRoomId);
-        } else {
-          console.log('🔔 다른 채팅방 → onUnreadIncrease 호출');
-          onUnreadIncrease(parsed.chatRoomId);
-        }
-    });
-
-    subscriptions.set(destination, sub);
-    console.log(`📥 Subscribed to ${destination}`);
-  });
-};
-
 export const unsubscribeFromRoom = (chatRoomId: number) => {
   const destination = `/sub/chatroom/${chatRoomId}`;
   const sub = subscriptions.get(destination);
@@ -270,6 +223,61 @@ console.log(`📡 상태 구독 시도: /sub/status/${userId}`);
     console.log(`⏳ 구독 대기: /sub/status/${userId} (retry ${retry})`);
     setTimeout(() => subscribeWithRetry(userId, onStatus, retry + 1), 100);
   }
+};
+
+export const subscribeToRoom = (
+  chatRoomId: number,
+  onMessage: (msg: any) => void,
+  onUnreadIncrease: (roomId: number) => void,
+  onUnreadClear: (roomId: number) => void,
+  currentChatRoomId: number,
+  currentUserId: number
+) => {
+  const destination = `/sub/chatroom/${chatRoomId}`;
+
+  if (subscriptions.has(destination)) {
+    console.log(`⚠️ Already subscribed to ${destination}`);
+    return;
+  }
+
+  waitUntilReady(() => {
+    console.log(`🧪 연결됨 → ${destination} 구독 시도`);
+
+    const sub = client.subscribe(destination, (message: IMessage) => {
+      const parsed = JSON.parse(message.body);
+
+      console.log('💬 메시지 수신됨:', parsed);
+      console.log('📍 현재 보고 있는 채팅방 ID:', currentChatRoomId);
+      console.log('📍 메시지의 채팅방 ID:', parsed.chatRoomId);
+      console.log('📍 보낸 사람 ID:', parsed.senderId);
+      console.log('📍 현재 유저 ID:', currentUserId);
+
+      // ✅ 자기 메시지는 무시
+      if (parsed.senderId === currentUserId) {
+        console.log('🔁 자기 메시지 → 무시');
+        return;
+      }
+
+      // ✅ 메시지 자체는 항상 반영
+      onMessage(parsed);
+
+      if (parsed.chatRoomId === currentChatRoomId) {
+        if (document.hasFocus()) {
+          console.log('✅ 현재 채팅방 + 브라우저 활성화 상태 → 읽음 처리');
+          onUnreadClear(parsed.chatRoomId);
+        } else {
+          console.log('🚫 현재 채팅방이지만 브라우저 비활성화 상태 → 읽음 처리 보류');
+        }
+      } else {
+        console.log('🔔 다른 채팅방 → unread 증가');
+    
+        onUnreadIncrease(parsed.chatRoomId);
+      }
+    });
+
+    subscriptions.set(destination, sub);
+    console.log(`📥 Subscribed to ${destination}`);
+  });
 };
 
 export default client;
