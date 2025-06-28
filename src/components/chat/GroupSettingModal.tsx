@@ -14,17 +14,15 @@ import {
 import { useUser } from '../../context/UserContext';
 import { useChatUI } from '../../context/ChatUIContext';
 import InviteMoreModal from '../panel/InviteMoreModal'; // ✅ 추가
-import { api } from '../../api/axios';
 
 interface Props {
   roomId: number;
   onClose: () => void;
-  onLeft?: (roomId: number) => void;
+  onLeft: () => void;
 }
 
 const GroupSettingModal = ({ roomId, onClose, onLeft }: Props) => {
   const { user } = useUser();
-  const { user: currentUser } = useUser();
   const {
     chatRooms,
     setChatRooms,
@@ -65,18 +63,20 @@ const GroupSettingModal = ({ roomId, onClose, onLeft }: Props) => {
     }
   };
 
- const handleLeaveGroup = async () => {
-  if (!window.confirm('정말 이 채팅방을 나가시겠습니까?')) return;
-  if (!currentUser) return;
-
-  try {
-    await api.delete(`/chat/${roomId}/leave/${currentUser.userId}`);
-    onLeft?.(roomId);
-  } catch (e) {
-    console.error('나가기 실패:', e);
-    alert('나가기 실패');
-  }
-};
+  const handleLeaveGroup = async () => {
+    if (!window.confirm('정말 이 채팅방을 나가시겠습니까?')) return;
+    try {
+      await leaveGroupChat(roomId, user!.userId);
+      setChatRooms((prev) => prev.filter((room) => room.id !== roomId));
+      if (selectedRoom?.id === roomId) {
+        setSelectedRoom(null);
+        setCurrentChatRoomId(null);
+      }
+      onLeft();
+    } catch (err) {
+      console.error('채팅방 나가기 실패:', err);
+    }
+  };
 
   useEffect(() => {
     if (selectedRoom?.name) {

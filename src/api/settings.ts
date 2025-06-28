@@ -117,7 +117,7 @@ export const putDMNotificationLevel = async (
   await api.put('/notification-setting/chat-room', payload);
 };
 
-// ✅ [GET] DM 채팅방 알림 설정 조회
+// ✅ [GET] 채팅방 알림 설정 조회
 export const getChatRoomNotificationSettings = async (userId: number, chatRoomId: number) => {
    const res = await api.get(`/notification-setting/${userId}/${chatRoomId}`);
    return res.data;
