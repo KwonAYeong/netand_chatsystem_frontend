@@ -112,6 +112,7 @@ export default function ChatList({
       name: room.chatRoomName,
       profileImage: room.receiverProfileImage,
     });
+    onUnreadClear(room.chatRoomId);
     navigate(`/chat/${room.chatRoomId}`);
   };
 
@@ -141,11 +142,12 @@ export default function ChatList({
                 }
               />
               <span>{room.chatRoomName}</span>
-              {room.unreadMessageCount > 0 && (
-                <span className="absolute right-2 top-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
-                  {unreadCounts[room.chatRoomId]}
-                </span>
-              )}
+              {unreadCounts[room.chatRoomId] > 0 && (
+  <span className="absolute right-2 top-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+    {unreadCounts[room.chatRoomId]}
+  </span>
+)}
+              
             </button>
           ))
         ) : (

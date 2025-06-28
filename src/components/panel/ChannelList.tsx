@@ -11,6 +11,7 @@ interface Props {
   selectedRoomId?: number;
   setSelectedRoom: (room: { id: number; name: string; type: 'group' }) => void;
   unreadCounts: Record<number, number>;
+  onUnreadClear: (roomId: number) => void; // ✅ 추가
 }
 
 export default function ChannelList({
@@ -18,6 +19,7 @@ export default function ChannelList({
   selectedRoomId,
   setSelectedRoom,
   unreadCounts, // ✅ props 받고
+  
 }: Props) {
   return (
     <div className="space-y-1">
@@ -34,6 +36,7 @@ export default function ChannelList({
                 name: chatRoomName,
                 type: 'group',
               })
+
             }
             className={`pl-2 py-1 rounded cursor-pointer transition-colors flex justify-between items-center ${
               isSelected ? 'bg-gray-200 font-bold' : 'hover:bg-gray-100'
