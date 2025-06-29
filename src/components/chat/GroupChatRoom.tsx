@@ -18,8 +18,7 @@ import useWebSocket from '../../hooks/useWebSocket';
 import type { Message } from '../../types/message';
 import type { User } from '../../types/user';
 import { useChatUI } from '../../context/ChatUIContext';
-import { useSearchParams } from 'react-router-dom';
-
+import { useLocation,useSearchParams, useNavigate } from 'react-router-dom';
 interface GroupChatRoomProps {
   roomId: number;
   chatRoomName: string;
@@ -48,14 +47,17 @@ export default function GroupChatRoom({
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const lastReadMessageIdRef = useRef<number>(0);
   const { user } = useUser();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
+  const hasTargetMessage = messages.some((m) => m.id === Number(targetMessageId));
   const tryUpdateLastRead = (msg: Message) => {
     const isNotMine = msg.sender.id !== currentUser.id;
     const isCurrentRoom = msg.chatRoomId === roomId;
     const isNewer = msg.id > lastReadMessageIdRef.current;
+    
 
     if (isNotMine && isCurrentRoom && isNewer) {
       updateLastReadMessage(roomId, currentUser.id, msg.id)
@@ -92,14 +94,7 @@ export default function GroupChatRoom({
 
 
   useEffect(() => {
-    setSelectedRoom({
-      id: roomId,
-      type: 'group',
-      name: chatRoomName,
-    });
-  }, [roomId, chatRoomName, members.length]);
-
-  useEffect(() => {
+    if (messages.length > 0) return;
     getMessages(roomId)
       .then((res) => {
         console.log('📦 메시지 불러오기 응답:', res.data);
@@ -116,22 +111,29 @@ export default function GroupChatRoom({
       })
       .catch((err) => console.error('❌ 메시지 불러오기 실패:', err));
   }, [roomId]);
+
 useEffect(() => {
-  if (targetMessageId && messages.length > 0) {
+  if (targetMessageId && hasTargetMessage) {
     requestAnimationFrame(() => {
       setTimeout(() => {
         const el = document.getElementById(`message-${targetMessageId}`);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           el.classList.add('ring', 'ring-blue-300', 'rounded-md');
-          setTimeout(() => el.classList.remove('ring', 'ring-blue-300'), 2000);
-        } else {
-          console.warn('❌ 메시지 요소를 찾을 수 없음:', targetMessageId);
+
+          setTimeout(() => {
+            el.classList.remove('ring', 'ring-blue-300', 'rounded-md');
+
+            // ✅ 하이라이트 후 URL 정리
+            searchParams.delete('message');
+            setSearchParams(searchParams, { replace: true });
+          }, 2000);
         }
-      }, 100); // ← 너무 크면 UX 나빠지니 이 정도 유지
+      }, 100);
     });
   }
-}, [targetMessageId, messages]);
+}, [targetMessageId, messages, location.state?.forceNavigate]);
+
 
   useEffect(() => {
     getGroupMembers(roomId)
