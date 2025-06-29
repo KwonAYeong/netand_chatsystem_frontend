@@ -40,6 +40,7 @@ export default function MessageItem({ message, isGrouped }: Props) {
 
 
   function highlightMentions(text: string, mentionedNames: string[] = []) {
+    if (!mentionedNames || mentionedNames.length === 0) return [text];
     let result: React.ReactNode[] = [];
     let lastIndex = 0;
 

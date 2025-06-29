@@ -28,12 +28,15 @@ const Sidebar = ({ clearSelectedRoom }: SidebarProps) => {
         </button>
 
         <button
-          onClick={() => setActiveMenu('activity')}
+          onClick={() => {
+            setActiveMenu('activity');
+            clearSelectedRoom(); // ✅ 채팅방 초기화 추가
+          }}
           className="flex flex-col items-center hover:text-gray-600"
         >
-          <ClipboardListIcon className={clsx(activeMenu === 'activity' && 'text-gray-800')} />
-          <span className="text-xs mt-1 font-bold">내 활동</span>
-        </button>
+  <ClipboardListIcon className={clsx(activeMenu === 'activity' && 'text-gray-800')} />
+  <span className="text-xs mt-1 font-bold">내 활동</span>
+</button>
       </div>
 
       {/* 하단 메뉴 */}

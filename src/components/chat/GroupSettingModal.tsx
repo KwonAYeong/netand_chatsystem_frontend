@@ -14,6 +14,7 @@ import {
 import { useUser } from '../../context/UserContext';
 import { useChatUI } from '../../context/ChatUIContext';
 import InviteMoreModal from '../panel/InviteMoreModal'; // ✅ 추가
+import { useNotificationSettings } from '../../context/NotificationSettingsContext';
 
 interface Props {
   roomId: number;
@@ -35,7 +36,7 @@ const GroupSettingModal = ({ roomId, onClose, onLeft }: Props) => {
   const [notificationLevel, setNotificationLevel] = useState<AlertType>('ALL');
   const [loading, setLoading] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false); // ✅ 초대 모달 상태
-
+  const { refreshSettings } = useNotificationSettings();
   const handleSave = async () => {
     try {
       const trimmed = name.trim();
@@ -57,6 +58,9 @@ const GroupSettingModal = ({ roomId, onClose, onLeft }: Props) => {
       }
 
       await putGroupNotificationLevel(user!.userId, roomId, notificationLevel);
+
+      await refreshSettings();
+      
       onClose();
     } catch (err) {
       console.error('설정 저장 실패:', err);

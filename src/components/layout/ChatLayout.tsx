@@ -74,32 +74,24 @@ const ChatLayout = () => {
   }, [user]);
 
   // ✅ 채팅방 변경 감지
-  useEffect(() => {
-    if (!chatRoomId) {
-      setSelectedRoom(null);
-      prevRoomIdRef.current = null;
-    } else {
-      const newRoomId = Number(chatRoomId);
-      if (prevRoomIdRef.current !== newRoomId) {
-        const allRooms = [...dmRooms, ...groupRooms];
-        const matchedRoom = allRooms.find((room) => room.chatRoomId === newRoomId);
-        if (!matchedRoom) return;
+useEffect(() => {
+  if (!chatRoomId || !groupRooms.length) return;
 
-        setSelectedRoom({
-          id: newRoomId,
-          type: matchedRoom.chatRoomType === 'GROUP' ? 'group' : 'dm',
-          name: matchedRoom.chatRoomName || `채팅방 ${chatRoomId}`,
-          profileImage: matchedRoom.receiverProfileImage || '/default_profile.jpg',
-        });
+  const roomId = Number(chatRoomId);
+  const matchedRoom = groupRooms.find((room) => room.chatRoomId === roomId);
+  if (!matchedRoom) return;
 
-        prevRoomIdRef.current = newRoomId;
-      }
+  // ✅ messageId가 달라졌을 때도 강제로 selectedRoom 업데이트
+  if (activeMenu === 'home' || activeMenu === 'activity') {
+    setSelectedRoom({
+      id: roomId,
+      type: 'group',
+      name: matchedRoom.chatRoomName,
+      profileImage: matchedRoom.receiverProfileImage || '/default_profile.jpg',
+    });
+  }
+}, [chatRoomId, groupRooms, targetMessageId]);
 
-      if (!showProfile) {
-        setShowProfile(false);
-      }
-    }
-  }, [chatRoomId, location.pathname, dmRooms, groupRooms]);
 
   useEffect(() => {
     if (user) {
@@ -145,7 +137,7 @@ const ChatLayout = () => {
               />
             ) : (
               <GroupChatRoom
-                key={`${selectedRoom.id}-${targetMessageId || ''}`}
+                key={`${selectedRoom.id}`}
                 roomId={selectedRoom.id}
                 chatRoomName={selectedRoom.name}
                 currentUser={{
