@@ -80,7 +80,7 @@ export default function MessageItem({ message, isGrouped }: Props) {
     >
       {!isGrouped && (
         <img
-          src={message.sender.profileImageUrl || '/profileEX.png'}
+          src={message.sender.profileImageUrl || '/default_profile.jpg'}
           alt="avatar"
           onClick={handleAvatarClick}
           className="w-9 h-9 rounded-md object-cover mt-1 cursor-pointer hover:opacity-80"

@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+// ✅ ChatLayout.tsx
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useParams, useSearchParams, useLocation } from 'react-router-dom';
 import Sidebar from '../sidebar/Sidebar';
-import ChatMenuPanel from '../panel/ChatMenuPanel';
+import ChatMenuPanel, { ChatMenuPanelRef } from '../panel/ChatMenuPanel';
 import ActivityPanel from '../panel/ActivityPanel';
 import ChatRoom from '../chat/ChatRoom';
 import GroupChatRoom from '../chat/GroupChatRoom';
@@ -14,14 +15,14 @@ import { useChatUI as useChatUIContext } from '../../context/ChatUIContext';
 import { useChatUI as useChatUIHooks } from '../../hooks/useChatUI';
 import { getChatRoomsByUser, getGroupChannelsByUser } from '../../api/chat';
 import type { ChatRoom as ChatRoomType } from '../../types/chat';
+import { subscribeToRoomList } from '../../lib/websocket';
 
 const ChatLayout = () => {
   const { chatRoomId } = useParams();
   const [searchParams] = useSearchParams();
   const targetMessageId = searchParams.get('message');
   const location = useLocation();
-
-  const prevRoomIdRef = useRef<number | null>(null);
+  const menuRef = useRef<ChatMenuPanelRef>(null);
 
   const [dmRooms, setDmRooms] = useState<ChatRoomType[]>([]);
   const [groupRooms, setGroupRooms] = useState<ChatRoomType[]>([]);
@@ -48,54 +49,40 @@ const ChatLayout = () => {
     });
   };
 
-  // 📥 DM & 그룹 채팅방 목록 가져오기
   const fetchChatRooms = useCallback(() => {
     if (!user) return;
-
     getChatRoomsByUser(user.userId)
-      .then((res) => {
-        const patchedRooms = res.data.map((room: any) => ({
-          ...room,
-          userId: room.userId,
-        }));
-        setDmRooms(patchedRooms);
-      })
+      .then((res) => setDmRooms(res.data))
       .catch((err) => console.error('❌ DM 채팅방 목록 실패:', err));
 
     getGroupChannelsByUser(user.userId)
-      .then((res) => {
-        const patchedGroups = res.map((room: any) => ({
-          ...room,
-          userId: room.userId,
-        }));
-        setGroupRooms(patchedGroups);
-      })
+      .then((res) => setGroupRooms(res))
       .catch((err) => console.error('❌ 그룹 채팅방 목록 실패:', err));
   }, [user]);
 
-  // ✅ 채팅방 변경 감지
-useEffect(() => {
-  if (!chatRoomId || !groupRooms.length) return;
-
-  const roomId = Number(chatRoomId);
-  const matchedRoom = groupRooms.find((room) => room.chatRoomId === roomId);
-  if (!matchedRoom) return;
-
-  // ✅ messageId가 달라졌을 때도 강제로 selectedRoom 업데이트
-  if (activeMenu === 'home' || activeMenu === 'activity') {
-    setSelectedRoom({
-      id: roomId,
-      type: 'group',
-      name: matchedRoom.chatRoomName,
-      profileImage: matchedRoom.receiverProfileImage || '/default_profile.jpg',
-    });
-  }
-}, [chatRoomId, groupRooms, targetMessageId]);
-
+  useEffect(() => {
+    if (!chatRoomId || !groupRooms.length) return;
+    const roomId = Number(chatRoomId);
+    const matchedRoom = groupRooms.find((room) => room.chatRoomId === roomId);
+    if (!matchedRoom) return;
+    if (activeMenu === 'home' || activeMenu === 'activity') {
+      setSelectedRoom({
+        id: roomId,
+        type: 'group',
+        name: matchedRoom.chatRoomName,
+        profileImage: matchedRoom.receiverProfileImage || '/default_profile.jpg',
+      });
+    }
+  }, [chatRoomId, groupRooms, targetMessageId]);
 
   useEffect(() => {
     if (user) {
       fetchChatRooms();
+
+      subscribeToRoomList(user.userId, () => {
+        console.log('🔄 채팅방 리스트 WebSocket 갱신 → ChatMenuPanel.refresh() 호출');
+        menuRef.current?.refetchChannelRooms();
+      });
     }
   }, [user, fetchChatRooms]);
 
@@ -109,12 +96,11 @@ useEffect(() => {
 
   return (
     <div className="flex h-screen relative">
-      {/* Sidebar */}
       <Sidebar clearSelectedRoom={() => setSelectedRoom(null)} />
 
-      {/* 중앙 메뉴 패널 */}
       {activeMenu === 'home' && (
         <ChatMenuPanel
+          ref={menuRef}
           currentUserId={user.userId}
           selectedRoomId={selectedRoom?.id}
           onUnreadClear={handleUnreadClear}
@@ -122,7 +108,6 @@ useEffect(() => {
       )}
       {activeMenu === 'activity' && <ActivityPanel />}
 
-      {/* 채팅 화면 */}
       <div className="flex flex-1 relative">
         <div className={`flex-1 transition-all duration-300 ${showProfile ? 'mr-[400px]' : ''}`}>
           {selectedRoom ? (
@@ -157,7 +142,6 @@ useEffect(() => {
           )}
         </div>
 
-        {/* 우측 프로필 패널 */}
         {showProfile && (
           <div className="absolute top-0 right-0 w-[400px] h-full z-50 bg-white shadow-lg">
             <ProfilePanel />
@@ -165,7 +149,6 @@ useEffect(() => {
         )}
       </div>
 
-      {/* 모달 */}
       {showProfileModal && <ProfileEditModal />}
       {showSettingsModal && <SettingsModal key={user?.userId} />}
     </div>

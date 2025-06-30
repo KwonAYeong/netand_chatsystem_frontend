@@ -33,7 +33,7 @@ export default function Header({
           {selectedRoom?.type === 'dm' ? (
             <div className="flex items-center space-x-2">
               <img
-                src={selectedRoom.profileImage || '/default-profile.png'}
+                src={selectedRoom.profileImage || '/default_profile.jpg'}
                 alt={selectedRoom.name}
                 className="w-8 h-8 rounded"
               />

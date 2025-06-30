@@ -11,6 +11,7 @@ interface Props {
   onMessage: (msg: any) => void;
   onUnreadIncrease: (roomId: number) => void;
   onUnreadClear: (roomId: number) => void;
+  onRoomEvent?: (data: any) => void;
 }
 
 const waitUntilConnected = (callback: () => void, retry = 0) => {
@@ -34,14 +35,14 @@ export default function useWebSocket({
   onMessage,
   onUnreadIncrease,
   onUnreadClear,
-  
+  onRoomEvent
 }: Props) {
   const { user } = useUser();
   useEffect(() => {
     if (!user) return;
     waitUntilConnected(() => {
       unsubscribeFromRoom(roomId);
-      subscribeToRoom(roomId, onMessage, onUnreadIncrease, onUnreadClear, activeRoomId,user.userId);
+      subscribeToRoom(roomId, onMessage, onUnreadIncrease, onUnreadClear, activeRoomId,user.userId,onRoomEvent);
     });
 
     return () => {
