@@ -11,7 +11,7 @@ export const useSSEWithNotification = (
   navigate: NavigateFunction
 ) => {
   const { notificationSettings, refreshSettings } = useNotificationSettings();
-  const { currentChatRoomId, selectedRoom, setSelectedRoom } = useChatUI();
+  const { currentChatRoomId, setSelectedRoom } = useChatUI();
 
   const refreshSettingsRef = useRef(refreshSettings);
   const currentChatRoomIdRef = useRef(currentChatRoomId);
@@ -91,9 +91,15 @@ export const useSSEWithNotification = (
     };
 
     const handleNotification = (data: any) => {
-      console.log('현재 currentChatRoomId:', currentChatRoomIdRef.current, 'chatRoomId:', data.chatRoomId);
+      const mentions = Array.isArray(data.mentionedUserIds) ? data.mentionedUserIds : [];
+        const processedData = {
+          chatRoomId: data.chatRoomId,
+          createdAt: data.createdAt,
+          mentions, // 💡 핵심
+        };
+       console.log('현재 currentChatRoomId:', currentChatRoomIdRef.current, 'chatRoomId:', data.chatRoomId);
 
-      if (shouldShowNotification(notificationSettingsRef.current, data, userId)) {
+      if (shouldShowNotification(notificationSettingsRef.current,processedData, userId)) {
         console.log('✅ 알림 표시 조건 통과');
 
         const isCurrentRoom = currentChatRoomIdRef.current === data.chatRoomId;

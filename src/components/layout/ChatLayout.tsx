@@ -21,19 +21,17 @@ const ChatLayout = () => {
   const { chatRoomId } = useParams();
   const [searchParams] = useSearchParams();
   const targetMessageId = searchParams.get('message');
-  const location = useLocation();
   const menuRef = useRef<ChatMenuPanelRef>(null);
 
   const [dmRooms, setDmRooms] = useState<ChatRoomType[]>([]);
   const [groupRooms, setGroupRooms] = useState<ChatRoomType[]>([]);
 
-  const { user, unreadCounts, setUnreadCounts } = useUser();
+  const { user, setUnreadCounts } = useUser();
   const {
     showProfile,
     showProfileModal,
     showSettingsModal,
     activeMenu,
-    setShowProfile,
   } = useChatUIHooks();
 
   const {

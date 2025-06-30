@@ -38,8 +38,9 @@ export default function ChatList({
   const navigate = useNavigate();
     const { selectedRoom } = useChatUI();  // ✅ 가장 최신 선택 채팅방 정보
   const currentChatRoomId = selectedRoom?.type === 'dm' ? selectedRoom.id : -1;
+  const currentChatRoomIdRef = useRef<number>(currentChatRoomId);
   const subscribedRef = useRef<Set<number>>(new Set());
-  const { subscribeUsers, unsubscribeUsers, userStatuses, setUserStatuses } =
+  const { userStatuses, setUserStatuses } =
     useUserStatusContext();
 
   // 1. 채팅방에서 유저 ID 추출
@@ -47,6 +48,9 @@ export default function ChatList({
     .map((room) => room.userId)
     .filter((id): id is number => typeof id === 'number');
 
+useEffect(() => {
+  currentChatRoomIdRef.current = currentChatRoomId;
+}, [currentChatRoomId]);
   // 2. 유저 상태 초기화 (새 유저 있을 때만 요청)
   useEffect(() => {
     const fetchedUserIds = Object.keys(userStatuses).map(Number);
@@ -93,7 +97,7 @@ export default function ChatList({
             () => {},
             onUnreadIncrease,  // ✅ 읽지 않은 메시지 증가
             onUnreadClear,     // ✅ 현재 방이면 읽음 처리
-            currentChatRoomId,
+            currentChatRoomIdRef,
             currentUserId 
           );
           subscribedRef.current.add(room.chatRoomId);
