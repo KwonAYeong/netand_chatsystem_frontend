@@ -44,7 +44,6 @@ export default function GroupChatRoom({
   const [members, setMembers] = useState<User[]>([]);
   const [showMembers, setShowMembers] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false); // ✅ 초대 모달 상태
-  const { setSelectedRoom } = useChatUI();
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const lastReadMessageIdRef = useRef<number>(0);
   const { user } = useUser();

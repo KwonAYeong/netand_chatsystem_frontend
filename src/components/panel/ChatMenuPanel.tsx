@@ -13,7 +13,7 @@ import { useChatUI } from '../../context/ChatUIContext';
 import { api } from '../../api/axios';
 import type { ChatRoom } from '../../types/chat';
 import { getGroupChannelsByUser } from '../../api/chat';
-import { subscribeToRoom, default as client, subscribeToRoomList } from '../../lib/websocket';
+import { subscribeToRoom, default as client, subscribeToRoomList, unsubscribeFromRoom } from '../../lib/websocket';
 
 interface Props {
   currentUserId: number;
@@ -32,6 +32,8 @@ const ChatMenuPanel = forwardRef<ChatMenuPanelRef, Props>(({ currentUserId, sele
   const [dmRooms, setDmRooms] = useState<ChatRoom[]>([]);
   const [channels, setChannels] = useState<ChatRoom[]>([]);
   const subscribedRef = useRef<Set<number>>(new Set());
+  const currentChatRoomIdRef = useRef<number>(selectedRoom?.id ?? -1);
+
 
   const handleLeftRoom = (leftRoomId: number) => {
     const leftId = Number(leftRoomId);
@@ -126,22 +128,21 @@ const ChatMenuPanel = forwardRef<ChatMenuPanelRef, Props>(({ currentUserId, sele
       return updated;
     });
   };
-
+useEffect(() => {
+  currentChatRoomIdRef.current = selectedRoom?.id ?? -1;
+}, [selectedRoom]);
   useEffect(() => {
     if (!client.connected) return;
-    const currentRoomId = selectedRoom?.id ?? -1;
     [...dmRooms, ...channels].forEach((room) => {
-      if (!subscribedRef.current.has(room.chatRoomId)) {
+      unsubscribeFromRoom(room.chatRoomId);
         subscribeToRoom(
           room.chatRoomId,
           () => {},
           handleUnreadIncrease,
           handleUnreadClear,
-          currentRoomId,
+          currentChatRoomIdRef,
           currentUserId
         );
-        subscribedRef.current.add(room.chatRoomId);
-      }
     });
   }, [dmRooms, channels, selectedRoom?.id]);
 

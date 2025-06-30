@@ -5,7 +5,6 @@ import { AlertType } from '../../types/notification';
 import {
   patchGroupChatRoomName,
   leaveGroupChat,
-  getGroupMembers,
 } from '../../api/chat';
 import {
   putGroupNotificationLevel,
@@ -25,7 +24,6 @@ interface Props {
 const GroupSettingModal = ({ roomId, onClose, onLeft }: Props) => {
   const { user } = useUser();
   const {
-    chatRooms,
     setChatRooms,
     selectedRoom,
     setSelectedRoom,

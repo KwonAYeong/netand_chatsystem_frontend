@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useUser } from '../../context/UserContext';
 import { MdPerson } from "react-icons/md";
 import { disconnectSocket } from '../../lib/websocket';
-import { useUserStatusContext } from '../../context/UserStatusContext';
 
 const PersonIcon = MdPerson as unknown as React.FC<React.SVGProps<SVGSVGElement>>;
 const dummyUserIds = [1, 2, 3, 4, 5, 6, 7, 8];

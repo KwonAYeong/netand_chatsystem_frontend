@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Message } from '../../types/message';
-import { useUser } from '../../context/UserContext';
 import { useChatUI } from '../../context/ChatUIContext';
 import { Download } from 'lucide-react';
 
@@ -21,14 +20,11 @@ const isImageFile = (fileName: string) => {
 };
 
 export default function MessageItem({ message, isGrouped }: Props) {
-  const { user } = useUser();
-  const isMine = user?.userId === message.sender.id;
   const [hovered, setHovered] = useState(false);
   const { setSelectedUser, setShowProfile } = useChatUI();
 
   const fileLink = message.fileUrl || message.content;
   const fileName = decodeURIComponent(fileLink?.split('/').pop() || '파일');
-  const isMentioned = message.mentionedUserNames?.includes(user?.name || '');
 
   const handleAvatarClick = () => {
     setSelectedUser?.({ userId: message.sender.id });

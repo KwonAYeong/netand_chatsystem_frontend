@@ -3,18 +3,15 @@ import React, {
   useContext,
   useState,
   useEffect,
-  useRef,
   ReactNode,
   Dispatch,
   SetStateAction,
 } from 'react';
 import { getUserProfileById } from '../api/profile';
 import type { User } from '../types/user';
-import { Client } from '@stomp/stompjs';
 import { setOnline, waitUntilReady } from '../lib/websocket';
 import { useUserStatusContext } from './UserStatusContext';
 import client from '../lib/websocket'; // ✅ WebSocket 클라이언트
-import { useChatUI } from './ChatUIContext';
 
 interface UserContextValue {
   user: User | null;
@@ -38,7 +35,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState<Record<number, number>>({}); // ✅ 상태 추가
-  const { setTargetUserIds } = useUserStatusContext();
 
   const setUserById = async (id: number) => {
     if (client.connected) {
@@ -81,21 +77,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
         // ✅ /sub/unread/{userId} 구독 추가
         const destination = `/sub/unread/${formattedUser.userId}`;
-        const sub = client.subscribe(destination, (message) => {
-          try {
-            const payload = JSON.parse(message.body);
-            const { chatRoomId, unreadMessageCount } = payload;
-            console.log('📩 [UNREAD] 메시지 수신:', payload);
-
-            setUnreadCounts((prev) => ({
-              ...prev,
-              [chatRoomId]: unreadMessageCount,
-            }));
-          } catch (err) {
-            console.error('❌ [UNREAD] 메시지 처리 오류:', err);
-          }
-        });
-
         console.log(`📡 [UNREAD] 구독 등록: ${destination}`);
       };
 

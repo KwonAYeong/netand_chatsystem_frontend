@@ -35,7 +35,6 @@ export default function ChatRoom({
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const { user } = useUser();
   const lastReadMessageIdRef = useRef<number>(0); // 마지막 읽은 메시지 추적
-  const { setSelectedRoom } = useChatUI();
   // 하단으로 스크롤
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

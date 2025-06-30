@@ -1,8 +1,6 @@
 // src/lib/websocket.ts
-import SockJS from 'sockjs-client';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
-
-let socket: WebSocket | null = null;
+import type { RefObject } from 'react';
 
 const client = new Client({
   webSocketFactory: () => {
@@ -230,7 +228,7 @@ export const subscribeToRoom = (
   onMessage: (msg: any) => void,
   onUnreadIncrease: (roomId: number) => void,
   onUnreadClear: (roomId: number) => void,
-  currentChatRoomId: number,
+  currentChatRoomIdRef: RefObject<number>,
   currentUserId: number,
   onRoomEvent?: (data: any) => void
 ) => {
@@ -260,7 +258,7 @@ export const subscribeToRoom = (
         onRoomEvent(parsed);
       }
 
-      if (parsed.chatRoomId === currentChatRoomId) {
+      if (parsed.chatRoomId === currentChatRoomIdRef.current) {
         if (document.hasFocus()) {
           console.log('✅ 현재 채팅방 + 브라우저 활성화 상태 → 읽음 처리');
           onUnreadClear(parsed.chatRoomId);

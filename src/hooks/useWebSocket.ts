@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react'; // ✅ useRef 추가
 import client, {
   subscribeToRoom,
   unsubscribeFromRoom,
   sendMessage,
 } from '../lib/websocket';
 import { useUser } from '../context/UserContext';
+
 interface Props {
   roomId: number;
   activeRoomId: number;
@@ -38,11 +39,26 @@ export default function useWebSocket({
   onRoomEvent
 }: Props) {
   const { user } = useUser();
+
+  const activeRoomIdRef = useRef<number>(activeRoomId); // ✅ ref 선언
+  useEffect(() => {
+    activeRoomIdRef.current = activeRoomId; // ✅ 최신화
+  }, [activeRoomId]);
+
   useEffect(() => {
     if (!user) return;
+
     waitUntilConnected(() => {
       unsubscribeFromRoom(roomId);
-      subscribeToRoom(roomId, onMessage, onUnreadIncrease, onUnreadClear, activeRoomId,user.userId,onRoomEvent);
+      subscribeToRoom(
+        roomId,
+        onMessage,
+        onUnreadIncrease,
+        onUnreadClear,
+        activeRoomIdRef, // ✅ ref 전달
+        user.userId,
+        onRoomEvent
+      );
     });
 
     return () => {
