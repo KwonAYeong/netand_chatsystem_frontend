@@ -51,8 +51,8 @@ export const useSSEWithNotification = (
       console.log('⚠️ 기존 EventSource 닫기');
       eventSourceRef.current.close();
     }
-    const eventSource = new EventSource(`http://localhost:8080/api/notification/subscribe?userId=${userId}`);
-    //const eventSource = new EventSource(`http://3.39.8.219:8080/api/notification/subscribe?userId=${userId}`);
+    // const eventSource = new EventSource(`http://localhost:8080/api/notification/subscribe?userId=${userId}`);
+    const eventSource = new EventSource(`http://3.39.8.219:8080/api/notification/subscribe?userId=${userId}`);
     eventSourceRef.current = eventSource;
 
     console.log('📢 SSE 연결 시작');
