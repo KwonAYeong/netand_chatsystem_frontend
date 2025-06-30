@@ -20,7 +20,7 @@ export default function MemberListModal({ members, onClose }: Props) {
             {members.map((member) => (
               <li key={member.email} className="flex items-center space-x-2">
                 <img
-                  src={member.profileImageUrl || '/default-profile.png'}
+                  src={member.profileImageUrl || '/default-profile.jpg'}
                   alt={member.name}
                   className="w-8 h-8 rounded"
                 />

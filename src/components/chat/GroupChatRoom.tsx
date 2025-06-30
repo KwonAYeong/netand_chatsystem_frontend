@@ -19,6 +19,7 @@ import type { Message } from '../../types/message';
 import type { User } from '../../types/user';
 import { useChatUI } from '../../context/ChatUIContext';
 import { useLocation,useSearchParams, useNavigate } from 'react-router-dom';
+import { subscribeToParticipants, unsubscribeFromParticipants } from '../../lib/websocket';
 interface GroupChatRoomProps {
   roomId: number;
   chatRoomName: string;
@@ -49,6 +50,16 @@ export default function GroupChatRoom({
   const { user } = useUser();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+  const handleRoomEvent = (data: any) => {
+  console.log('📡 그룹 멤버 이벤트 수신:', data);
+  if (data.type === 'memberUpdate') {
+    // 멤버 수 갱신 (예: setMembers 호출)
+    getGroupMembers(roomId)
+      .then((res) => setMembers(res.data))
+      .catch((err) => console.error('❌ 멤버 갱신 실패:', err));
+  }
+};
+
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -87,6 +98,7 @@ export default function GroupChatRoom({
   const { sendMessage } = useWebSocket({
     roomId,
     onMessage: handleIncomingMessage,
+    onRoomEvent: handleRoomEvent,
     activeRoomId: roomId,
     onUnreadIncrease,
     onUnreadClear,
@@ -196,6 +208,16 @@ useEffect(() => {
       console.error('❌ 멤버 새로고침 실패:', err);
     }
   };
+useEffect(() => {
+  const refetchMembers = () => {
+    getGroupMembers(roomId)
+      .then((res) => setMembers(res.data))
+      .catch((err) => console.error('❌ 멤버 갱신 실패:', err));
+  };
+
+  subscribeToParticipants(roomId, refetchMembers);
+  return () => unsubscribeFromParticipants(roomId);
+}, [roomId]);
 
   return (
     <div className="flex flex-col h-full">

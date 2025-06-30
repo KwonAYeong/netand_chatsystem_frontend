@@ -6,8 +6,8 @@ let socket: WebSocket | null = null;
 
 const client = new Client({
   webSocketFactory: () => {
-    //return new WebSocket('ws://localhost:8080/ws');
-    return new WebSocket('ws://3.39.8.219:8080/ws');
+    return new WebSocket('ws://localhost:8080/ws');
+    //return new WebSocket('ws://3.39.8.219:8080/ws');
   },
   reconnectDelay: 5000,
   heartbeatIncoming: 4000,
@@ -231,7 +231,8 @@ export const subscribeToRoom = (
   onUnreadIncrease: (roomId: number) => void,
   onUnreadClear: (roomId: number) => void,
   currentChatRoomId: number,
-  currentUserId: number
+  currentUserId: number,
+  onRoomEvent?: (data: any) => void
 ) => {
   const destination = `/sub/chatroom/${chatRoomId}`;
 
@@ -246,12 +247,6 @@ export const subscribeToRoom = (
     const sub = client.subscribe(destination, (message: IMessage) => {
       const parsed = JSON.parse(message.body);
 
-      console.log('💬 메시지 수신됨:', parsed);
-      console.log('📍 현재 보고 있는 채팅방 ID:', currentChatRoomId);
-      console.log('📍 메시지의 채팅방 ID:', parsed.chatRoomId);
-      console.log('📍 보낸 사람 ID:', parsed.senderId);
-      console.log('📍 현재 유저 ID:', currentUserId);
-
       // ✅ 자기 메시지는 무시
       if (parsed.senderId === currentUserId) {
         console.log('🔁 자기 메시지 → 무시');
@@ -260,6 +255,10 @@ export const subscribeToRoom = (
 
       // ✅ 메시지 자체는 항상 반영
       onMessage(parsed);
+
+      if (parsed.type === 'memberUpdate' && onRoomEvent) {
+        onRoomEvent(parsed);
+      }
 
       if (parsed.chatRoomId === currentChatRoomId) {
         if (document.hasFocus()) {
@@ -278,6 +277,47 @@ export const subscribeToRoom = (
     subscriptions.set(destination, sub);
     console.log(`📥 Subscribed to ${destination}`);
   });
+};
+export const subscribeToRoomList = (
+  userId: number,
+  onRefresh: () => void
+) => {
+  const destination = `/sub/chatroom/list/${userId}`;
+  if (subscriptions.has(destination)) return;
+
+  waitUntilReady(() => {
+    const sub = client.subscribe(destination, (message: IMessage) => {
+      console.log('🔄 채팅방 리스트 갱신 트리거 수신');
+      onRefresh(); // 예: fetchChatRooms()
+    });
+    subscriptions.set(destination, sub);
+  });
+};
+export const subscribeToParticipants = (
+  chatRoomId: number,
+  onRefetch: () => void
+) => {
+  const destination = `/sub/chatroom/participants/${chatRoomId}`;
+  if (subscriptions.has(destination)) return;
+
+  waitUntilReady(() => {
+    const sub = client.subscribe(destination, (message: IMessage) => {
+      console.log(`👥 참여자 수 갱신 트리거 수신 [${chatRoomId}]`);
+      onRefetch(); // getGroupMembers 등 호출
+    });
+    subscriptions.set(destination, sub);
+    console.log(`📥 Subscribed to ${destination}`);
+  });
+};
+
+export const unsubscribeFromParticipants = (chatRoomId: number) => {
+  const destination = `/sub/chatroom/participants/${chatRoomId}`;
+  const sub = subscriptions.get(destination);
+  if (sub) {
+    sub.unsubscribe();
+    subscriptions.delete(destination);
+    console.log(`📴 참여자 구독 해제: ${destination}`);
+  }
 };
 
 export default client;

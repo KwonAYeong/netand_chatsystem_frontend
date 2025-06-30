@@ -1,4 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+// ✅ ChatMenuPanel.tsx
+import React, {
+  useState, useEffect, useCallback,
+  useImperativeHandle, forwardRef,
+  useRef
+} from 'react';
 import ChatList from './ChatList';
 import ChannelList from './ChannelList';
 import InviteChannel from './InviteChannel';
@@ -8,8 +13,7 @@ import { useChatUI } from '../../context/ChatUIContext';
 import { api } from '../../api/axios';
 import type { ChatRoom } from '../../types/chat';
 import { getGroupChannelsByUser } from '../../api/chat';
-import { subscribeToRoom, default as client } from '../../lib/websocket';
-import { useRef } from 'react';
+import { subscribeToRoom, default as client, subscribeToRoomList } from '../../lib/websocket';
 
 interface Props {
   currentUserId: number;
@@ -17,43 +21,33 @@ interface Props {
   onUnreadClear: (roomId: number) => void;
 }
 
-export default function ChatMenuPanel({ currentUserId }: Props) {
-  const { user, unreadCounts, setUnreadCounts } = useUser(); // ✅ Context에서 받기
+export interface ChatMenuPanelRef {
+  refetchChannelRooms: () => void;
+}
+
+const ChatMenuPanel = forwardRef<ChatMenuPanelRef, Props>(({ currentUserId, selectedRoomId, onUnreadClear }, ref) => {
+  const { user, unreadCounts, setUnreadCounts } = useUser();
   const { selectedRoom, setChatRooms, setSelectedRoom, setCurrentChatRoomId } = useChatUI();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [dmRooms, setDmRooms] = useState<ChatRoom[]>([]);
   const [channels, setChannels] = useState<ChatRoom[]>([]);
-
   const subscribedRef = useRef<Set<number>>(new Set());
 
   const handleLeftRoom = (leftRoomId: number) => {
-  const leftId = Number(leftRoomId);
+    const leftId = Number(leftRoomId);
+    setChannels(prev => prev.filter((room) => room.chatRoomId !== leftId));
+    setChatRooms(prev => prev.filter((room) => room.id !== leftId));
+    if (selectedRoom?.id === leftId) {
+      setSelectedRoom(null);
+      setCurrentChatRoomId(null);
+    }
+  };
 
-  setChannels((prev) => {
-    const updated = prev.filter((room) => room.chatRoomId !== leftId);
-    console.log('🧹 channels 제거:', updated);
-    return updated;
-  });
-
-  setChatRooms((prev) =>
-    prev.filter((room) => room.id !== leftId)
-  );
-
-  if (selectedRoom?.id === leftId) {
-    setSelectedRoom(null);
-    setCurrentChatRoomId(null);
-  }
-};
-
-
-
-  // ✅ 그룹 채팅방 불러오기
   const fetchChannelRooms = useCallback(async () => {
     if (!user) return;
     try {
       const data = await getGroupChannelsByUser(user.userId);
-
-      const enriched = data.map((room: any) => ({
+      const enriched = data.map((room: ChatRoom) => ({
         ...room,
         chatRoomType: 'GROUP',
         receiverProfileImage: '',
@@ -62,75 +56,42 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
         unreadMessageCount: room.unreadMessageCount ?? 0,
       }));
 
-      setChannels(enriched);
-
       const convertedForUI = enriched.map((room: ChatRoom) => ({
         id: room.chatRoomId,
         name: room.chatRoomName,
         type: 'group',
       }));
 
-      setChatRooms((prev) => [
+      setChannels(prev => {
+        const prevMap = new Map(prev.map(room => [room.chatRoomId, room.chatRoomName]));
+        const changed = enriched.some((room: ChatRoom) => prevMap.get(room.chatRoomId) !== room.chatRoomName);
+        if (!changed && prev.length === enriched.length) return prev;
+        return enriched;
+      });
+
+      setChatRooms(prev => [
         ...prev.filter((room) => room.type !== 'group'),
         ...convertedForUI,
       ]);
+
+      setSelectedRoom((prev) => {
+        if (!prev) return prev;
+        const matched = convertedForUI.find((room: { id: number; name: string; type: string }) => room.id === prev.id);
+        if (matched && matched.name !== prev.name) {
+          console.log('✏️ selectedRoom 이름 동기화:', matched.name);
+          return { ...prev, name: matched.name };
+        }
+        return prev;
+      });
     } catch (err) {
       console.error('❌ 그룹 채팅방 목록 실패:', err);
     }
   }, [user, setChatRooms]);
 
-  // ✅ 안 읽은 메시지 수 수동 증가 (웹소켓 이벤트 전용)
-  const handleUnreadIncrease = (roomId: number) => {
-    setUnreadCounts((prev) => ({
-      ...prev,
-      [roomId]: (prev[roomId] || 0) + 1,
-    }));
-  };
+  useImperativeHandle(ref, () => ({
+    refetchChannelRooms: fetchChannelRooms
+  }));
 
-  // ✅ 안 읽은 메시지 수 수동 초기화
-  const handleUnreadClear = (roomId: number) => {
-    setUnreadCounts((prev) => {
-      const updated = { ...prev };
-      delete updated[roomId];
-      return updated;
-    });
-  };
-
-  useEffect(() => {
-  if (!client.connected) {
-    console.warn('❌ WebSocket 연결 안 됨');
-    return;
-  }
-
-  const currentRoomId = selectedRoom?.id ?? -1;
-
-  [...dmRooms, ...channels].forEach((room) => {
-    if (!subscribedRef.current.has(room.chatRoomId)) {
-      console.log(`✅ 구독 시작: ${room.chatRoomId}`);
-
-      subscribeToRoom(
-  room.chatRoomId,
-  (message: any) => {
-    console.log('[💬 수신 메시지]', message);
-
-    if (message.messageType === 'LEAVE' && message.userId === currentUserId) {
-      console.log('[👋 내가 나간 방 처리]', message.chatRoomId);
-      handleLeftRoom(message.chatRoomId); // 이제 정확한 roomId 전달됨
-    }
-  },
-  handleUnreadIncrease,
-  handleUnreadClear,
-  currentRoomId,
-  currentUserId
-);
-
-
-      subscribedRef.current.add(room.chatRoomId);
-    }
-  });
-}, [dmRooms, channels, selectedRoom?.id]);
-
-  // ✅ 1:1 채팅방 불러오기
   const fetchDmRooms = useCallback(async () => {
     if (!user) return;
     try {
@@ -144,33 +105,85 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
           unreadMessageCount: room.unreadMessageCount ?? 0,
         }));
 
-      const unique: ChatRoom[] = Array.from(
-        new Map(enriched.map((r: ChatRoom) => [r.chatRoomId, r])).values()
-      );
-
+      const unique: ChatRoom[] = Array.from(new Map(enriched.map((r: ChatRoom) => [r.chatRoomId, r])).values());
       setDmRooms(unique);
     } catch (err) {
       console.error('❌ DM 채팅방 목록 실패:', err);
     }
   }, [user]);
 
+  const handleUnreadIncrease = (roomId: number) => {
+    setUnreadCounts(prev => ({
+      ...prev,
+      [roomId]: (prev[roomId] || 0) + 1,
+    }));
+  };
+
+  const handleUnreadClear = (roomId: number) => {
+    setUnreadCounts(prev => {
+      const updated = { ...prev };
+      delete updated[roomId];
+      return updated;
+    });
+  };
+
+  useEffect(() => {
+    if (!client.connected) return;
+    const currentRoomId = selectedRoom?.id ?? -1;
+    [...dmRooms, ...channels].forEach((room) => {
+      if (!subscribedRef.current.has(room.chatRoomId)) {
+        subscribeToRoom(
+          room.chatRoomId,
+          () => {},
+          handleUnreadIncrease,
+          handleUnreadClear,
+          currentRoomId,
+          currentUserId
+        );
+        subscribedRef.current.add(room.chatRoomId);
+      }
+    });
+  }, [dmRooms, channels, selectedRoom?.id]);
+
   useEffect(() => {
     fetchChannelRooms();
     fetchDmRooms();
   }, [fetchChannelRooms, fetchDmRooms]);
 
+  useEffect(() => {
+    if (!user) return;
+    const refresh = () => {
+      console.log('📥 ChatMenuPanel → 채팅방 리스트 갱신 수신됨');
+      fetchChannelRooms();
+      fetchDmRooms();
+    };
+    subscribeToRoomList(user.userId, refresh);
+  }, [user, fetchChannelRooms, fetchDmRooms]);
   
+  useEffect(() => {
+    if (dmRooms.length || channels.length) {
+      const initialCounts: { [key: number]: number } = {};
+      [...dmRooms, ...channels].forEach((room) => {
+        if (room.hasUnreadMessage && room.unreadMessageCount > 0) {
+          initialCounts[room.chatRoomId] = room.unreadMessageCount;
+        }
+      });
+      setUnreadCounts(initialCounts);
+    }
+  }, [dmRooms, channels]);
+
   return (
     <div className="w-64 h-full p-4 border-r bg-white overflow-y-auto space-y-6 relative">
-      {/* ✅ 그룹 채널 목록 */}
+      {/* 채널 목록 */}
       <div>
         <h2 className="text-xs font-bold text-gray-500 mb-1">채널</h2>
         <ChannelList
+          key={channels.map(r => `${r.chatRoomId}-${r.chatRoomName}`).join(',')}
           channelRooms={channels}
           selectedRoomId={selectedRoom?.type === 'group' ? selectedRoom.id : undefined}
           setSelectedRoom={setSelectedRoom}
           unreadCounts={unreadCounts}
-          onUnreadClear={handleUnreadClear}
+          onUnreadClear={onUnreadClear}
         />
         <button
           className="text-sm text-gray-600 hover:text-blue-600"
@@ -180,7 +193,7 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
         </button>
       </div>
 
-      {/* ✅ 1:1 다이렉트 메시지 목록 */}
+      {/* 다이렉트 메시지 */}
       <div>
         <h2 className="text-xs font-bold text-gray-500 mb-1">다이렉트 메시지</h2>
         <ChatList
@@ -190,7 +203,7 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
           dmRooms={dmRooms}
           onUnreadIncrease={handleUnreadIncrease}
           onUnreadClear={handleUnreadClear}
-          unreadCounts={unreadCounts} // ✅ Context에서 받은 상태 사용
+          unreadCounts={unreadCounts}
         />
         <InviteUser
           senderId={user!.userId}
@@ -207,7 +220,6 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
         />
       </div>
 
-      {/* ✅ 그룹 초대 모달 */}
       {isInviteOpen && user && (
         <InviteChannel
           senderId={user.userId}
@@ -226,4 +238,6 @@ export default function ChatMenuPanel({ currentUserId }: Props) {
       )}
     </div>
   );
-}
+});
+
+export default ChatMenuPanel;

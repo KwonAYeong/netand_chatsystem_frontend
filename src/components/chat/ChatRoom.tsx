@@ -151,7 +151,7 @@ const currentChatRoomId = selectedRoom?.id;
         sender: {
           id: user.userId,
           name: user.name?? '이름없음',
-          profileImageUrl: user?.profileImageUrl || '/default-profile.png',
+          profileImageUrl: user?.profileImageUrl || '/default_profile.jpg',
         },
         content: text,
         messageType: file ? 'FILE' : 'TEXT',
